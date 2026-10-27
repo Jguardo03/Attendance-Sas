@@ -4,3 +4,13 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # The Supabase URL and publishable key are public by design and end up in the web bundle.
+  # Tell Netlify's secret scanner to ignore these two so it does not fail the build.
+  SECRETS_SCAN_OMIT_KEYS = "EXPO_PUBLIC_SUPABASE_URL,EXPO_PUBLIC_SUPABASE_KEY"
+
+# Expo's static export writes a 404 page called +not-found.html. Netlify only knows 404.html,
+# so serve it for unknown paths. Existing files and routes still win (no force).
+[[redirects]]
+  from = "/*"
+  to = "/+not-found.html"
+  status = 404
