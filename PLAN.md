@@ -260,6 +260,16 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - Storing the token or role in plain component state without `onAuthStateChange`.
 - Role checks by name instead of permission keys.
 
+### Phase 4 implementation notes (interim magic-link flow, 2026-10-28)
+
+- **No custom SMTP yet, so the email template cannot be changed to a 6-digit code.** Phase 4 is built on the default **magic link** instead. The sign-in screen sends the link (`signInWithOtp` with `emailRedirectTo`), the web build lets supabase-js read the tokens from the URL (`detectSessionInUrl` on web only), and native reads the deep link in `src/app/auth-callback.tsx` (`setSession`). Code entry (`verifyOtp`) is **deferred** until SMTP exists and the template has `{{ .Token }}`; then add a code field to the "Check your email" screen. Magic links can be consumed by mail scanners (seen once in Phase 3), so the code flow remains the better end state.
+- **Dashboard prerequisites for the link flow:** Authentication > URL Configuration: Site URL `https://attendacely.netlify.app`; Redirect URLs `https://attendacely.netlify.app/**`, `http://localhost:8081/**`, `attendancesas://**`, and `exp://**` while testing in Expo Go (remove `exp://**` once dev builds replace Expo Go). Also turn off "Allow new users to sign up".
+- The domain check uses `is_allowed_email`; an allowed domain always shows "Check your email" (an unknown account returns 422 from Supabase and is shown as sent). Resend has a 60 second cooldown in the UI; Supabase's own email rate limit still applies.
+- Routing: `src/app/_layout.tsx` guards `(auth)` with `!signedIn` and `(app)` with `signedIn` (`Stack.Protected`). `(app)/(tabs)` adds the Admin tab with `Tabs.Protected guard={can('admin.access')}`. A student opening `/admin` by URL is redirected.
+- `can()` reads the `permissions` claim. The hook already applies deny-over-grant, so the client only checks membership. Claims refresh with the token, so a changed permission shows up after the next refresh or sign-in.
+- Device permissions screen is shown once on native to anyone with `attendance.check_in` (not by role name). It is information only; real Bluetooth/NFC/camera requests arrive with Phases 8, 11 and 12.
+- `supabase/functions/admin-create-user` is written but **not deployed**; deploying needs the user's go-ahead. Tailwind `darkMode: 'class'` was set because NativeWind web threw "Cannot manually set color scheme" (covering the page) when a second route chunk loaded in dev.
+
 ---
 
 ## Phase 5: Admin CRUD part 1 (reference data and people)
