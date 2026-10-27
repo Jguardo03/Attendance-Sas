@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens (RGB triplets). Change values here for a future visual design pass. */
+:root {
+  --color-surface: 255 255 255;
+  --color-surface-muted: 243 244 246;
+  --color-border: 209 213 219;
+  --color-content: 17 24 39;
+  --color-content-muted: 107 114 128;
+  --color-primary: 37 99 235;
+  --color-primary-content: 255 255 255;
+  --color-danger: 220 38 38;
+  --color-success: 22 163 74;
+  --color-warning: 217 119 6;
+}
