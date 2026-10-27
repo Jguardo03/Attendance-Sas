@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  // No dark theme yet. 'class' avoids NativeWind web throwing "Cannot manually set color scheme"
+  // when a lazily loaded route adds styles to <head> while darkMode is 'media'.
+  darkMode: 'class',
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
