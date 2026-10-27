@@ -17,7 +17,9 @@ export const supabase = isSupabaseConfigured
         storage: Platform.OS === 'web' ? undefined : AsyncStorage,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
+        // Web consumes the magic-link tokens in the URL itself. Native handles the deep link in
+        // src/app/auth-callback.tsx, since there is no browser URL to read.
+        detectSessionInUrl: Platform.OS === 'web',
       },
     })
   : null;
