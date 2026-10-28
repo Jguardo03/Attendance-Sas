@@ -70,7 +70,18 @@ Deno.serve(async (req) => {
     email,
     email_confirm: true,
   });
-  if (createError || !created.user) return json({ error: createError?.message ?? 'Could not create account' }, 400);
+  if (createError || !created.user) {
+    // Same shape as a database error so the app can show its standard "already exists" message.
+    const exists = createError?.code === 'email_exists';
+    return json(
+      {
+        error: 'Could not create account',
+        code: exists ? '23505' : undefined,
+        message: exists ? 'violates unique constraint "uq_users_email_lower"' : createError?.message,
+      },
+      400,
+    );
+  }
 
   const { error: insertError } = await admin.from('users').insert({
     id,
@@ -84,7 +95,7 @@ Deno.serve(async (req) => {
   if (insertError) {
     // Do not leave an auth account without a users row.
     await admin.auth.admin.deleteUser(created.user.id);
-    return json({ error: insertError.message }, 400);
+    return json({ error: 'Could not create user', code: insertError.code, message: insertError.message }, 400);
   }
 
   return json({ id, auth_user_id: created.user.id }, 201);
