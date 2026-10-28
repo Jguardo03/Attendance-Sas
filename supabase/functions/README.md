@@ -15,5 +15,6 @@ Request: `POST /functions/v1/admin-create-user` with `Authorization: Bearer <use
 `{ id, first_name, last_name, email, role_id, email_parm_id }`. Replies 201 `{ id, auth_user_id }`,
 401 not signed in, 403 missing `users.manage`, 400 bad input.
 
-Deploy (not done yet): with the Supabase CLI `supabase functions deploy admin-create-user --no-verify-jwt`,
-or through the Supabase MCP `deploy_edge_function` with `verify_jwt: false`.
+Deployed 2026-10-28 to project `wsxziqkmnxtspydhanbd` (version 1, `verify_jwt` off) through the Supabase MCP
+`deploy_edge_function`. Redeploy after any change to `index.ts`, the same way or with
+`supabase functions deploy admin-create-user --no-verify-jwt`. Checked: a call with no token or a bad token returns 401.
