@@ -112,7 +112,7 @@ export const entities: EntityDef[] = [
     ],
     title: (row) => row.name,
     fields: [
-      { name: 'name', label: 'Name', type: 'text', required: true },
+      { name: 'name', label: 'Name', type: 'text', required: true, caseInsensitive: true },
       { name: 'start_date', label: 'Start date', type: 'date', required: true },
       { name: 'finish_date', label: 'Finish date', type: 'date', required: true, anchorField: 'start_date' },
       {
@@ -142,7 +142,7 @@ export const entities: EntityDef[] = [
     columns: [{ label: 'Description', value: (row) => row.description ?? '' }],
     title: (row) => row.name,
     fields: [
-      { name: 'name', label: 'Name', type: 'text', required: true },
+      { name: 'name', label: 'Name', type: 'text', required: true, caseInsensitive: true },
       { name: 'description', label: 'Description', type: 'textarea' },
     ],
     readOnly: [{ label: 'ID', value: (row) => String(row.id) }, ...audit],
@@ -329,7 +329,7 @@ export const entities: EntityDef[] = [
     columns: [{ label: 'Every', value: (row) => `${row.interval_days} days` }],
     title: (row) => row.name,
     fields: [
-      { name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Weekly' },
+      { name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Weekly', caseInsensitive: true },
       { name: 'interval_days', label: 'Days between sessions', type: 'number', required: true, placeholder: '7' },
     ],
     readOnly: [{ label: 'ID', value: (row) => String(row.id) }],
@@ -370,7 +370,7 @@ export const entities: EntityDef[] = [
     columns: [{ label: 'Description', value: (row) => row.description ?? '' }],
     title: (row) => row.name,
     fields: [
-      { name: 'name', label: 'Key', type: 'text', required: true, placeholder: 'area.action' },
+      { name: 'name', label: 'Key', type: 'text', required: true, placeholder: 'area.action', caseInsensitive: true },
       { name: 'description', label: 'Description', type: 'text' },
     ],
     readOnly: [{ label: 'ID', value: (row) => String(row.id) }, ...audit],
@@ -390,7 +390,7 @@ export const entities: EntityDef[] = [
     ],
     title: (row) => row.name,
     fields: [
-      { name: 'name', label: 'Name', type: 'text', required: true },
+      { name: 'name', label: 'Name', type: 'text', required: true, caseInsensitive: true },
       { name: 'description', label: 'Description', type: 'text' },
       { name: 'permission_ids', label: 'Permissions', type: 'permissions' },
     ],

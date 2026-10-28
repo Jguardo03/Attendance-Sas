@@ -57,12 +57,12 @@ const fallback = {
 // Adding a constraint to the database needs one line here so its fields get marked.
 // `message` replaces the generic wording when the constraint says more than the code can.
 export const constraintInfo: Record<string, { fields: string[]; title?: string; message?: string }> = {
-  uq_role_name: { fields: ['name'], message: 'Role names must be unique. Use a different name or edit the existing role.' },
-  uq_permissions_name: { fields: ['name'], message: 'Permission names must be unique.' },
+  uq_role_name_ci: { fields: ['name'], message: 'A role with this name already exists. Names are the same whatever the capital letters. Use a different name or edit the existing role.' },
+  uq_permissions_name_ci: { fields: ['name'], message: 'A permission with this name already exists. Names are the same whatever the capital letters.' },
   uq_email_parm_format: { fields: ['format'], message: 'This email format is already listed.' },
-  uq_frequency_name: { fields: ['name'], message: 'Frequency names must be unique.' },
-  uq_academic_period_name: { fields: ['name'], message: 'Period names must be unique.' },
-  uq_class_name: { fields: ['name'], message: 'Class names must be unique.' },
+  uq_frequency_name_ci: { fields: ['name'], message: 'A frequency with this name already exists. Names are the same whatever the capital letters.' },
+  uq_academic_period_name_ci: { fields: ['name'], message: 'A period with this name already exists. Names are the same whatever the capital letters.' },
+  uq_class_name_ci: { fields: ['name'], message: 'A class with this name already exists. Names are the same whatever the capital letters.' },
   uq_users_email_lower: { fields: ['email'], message: 'Someone already has this email address.' },
   pk_users: { fields: ['id'], message: 'This ID is already taken.' },
   chk_users_id: { fields: ['id'], message: 'The ID must start with S, L or A followed by 1 to 7 digits.' },

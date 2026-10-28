@@ -21,9 +21,10 @@ CREATE TABLE role (
     description VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-    CONSTRAINT pk_role PRIMARY KEY (id),
-    CONSTRAINT uq_role_name UNIQUE (name)
+    CONSTRAINT pk_role PRIMARY KEY (id)
 );
+-- Names are unique ignoring case and surrounding spaces.
+CREATE UNIQUE INDEX uq_role_name_ci ON role (lower(btrim(name)));
 
 -- Catalogue of actions a user can be allowed to perform.
 CREATE TABLE permissions (
@@ -32,9 +33,10 @@ CREATE TABLE permissions (
     description VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-    CONSTRAINT pk_permissions PRIMARY KEY (id),
-    CONSTRAINT uq_permissions_name UNIQUE (name)
+    CONSTRAINT pk_permissions PRIMARY KEY (id)
 );
+-- Names are unique ignoring case and surrounding spaces.
+CREATE UNIQUE INDEX uq_permissions_name_ci ON permissions (lower(btrim(name)));
 
 -- Allowed institutional email formats used to validate user emails.
 CREATE TABLE email_parm (
@@ -104,9 +106,10 @@ CREATE TABLE frequency (
     name VARCHAR(50) NOT NULL,
     interval_days INTEGER NOT NULL,
     CONSTRAINT pk_frequency PRIMARY KEY (id),
-    CONSTRAINT uq_frequency_name UNIQUE (name),
     CONSTRAINT chk_frequency_interval_days CHECK (interval_days > 0)
 );
+-- Names are unique ignoring case and surrounding spaces.
+CREATE UNIQUE INDEX uq_frequency_name_ci ON frequency (lower(btrim(name)));
 
 -- Terms or semesters that schedules belong to.
 CREATE TABLE academic_period (
@@ -118,9 +121,10 @@ CREATE TABLE academic_period (
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     CONSTRAINT pk_academic_period PRIMARY KEY (id),
-    CONSTRAINT uq_academic_period_name UNIQUE (name),
     CONSTRAINT chk_academic_period_dates CHECK (finish_date > start_date)
 );
+-- Names are unique ignoring case and surrounding spaces.
+CREATE UNIQUE INDEX uq_academic_period_name_ci ON academic_period (lower(btrim(name)));
 
 -- Subjects or units offered.
 CREATE TABLE class (
@@ -129,9 +133,10 @@ CREATE TABLE class (
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-    CONSTRAINT pk_class PRIMARY KEY (id),
-    CONSTRAINT uq_class_name UNIQUE (name)
+    CONSTRAINT pk_class PRIMARY KEY (id)
 );
+-- Names are unique ignoring case and surrounding spaces.
+CREATE UNIQUE INDEX uq_class_name_ci ON class (lower(btrim(name)));
 
 -- Rooms or spaces where classes take place.
 CREATE TABLE location (
