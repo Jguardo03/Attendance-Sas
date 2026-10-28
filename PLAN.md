@@ -270,6 +270,12 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - Device permissions screen is shown once on native to anyone with `attendance.check_in` (not by role name). It is information only; real Bluetooth/NFC/camera requests arrive with Phases 8, 11 and 12.
 - `supabase/functions/admin-create-user` is written (deployed in Phase 5). Tailwind `darkMode: 'class'` was set because NativeWind web threw "Cannot manually set color scheme" (covering the page) when a second route chunk loaded in dev.
 
+### Phase 4 follow-up: code sign-in (2026-10-28)
+
+- Custom SMTP became available, so the deferred **code entry** was built: the "Check your email" screen takes the code and calls `verifyOtp({ email, token, type: 'email' })` (`verifySignInCode` in `src/lib/sign-in.ts`). A wrong, expired or reused code all show one message ("wrong or has expired, tap Resend code"); rate limits and outages are worded separately. The Resend button keeps its 60 second cooldown.
+- The email template is in `supabase/email-templates/sign-in-code.html` (code only, no link, so a mail scanner cannot use the sign-in up). It must be pasted into Authentication > Emails > Templates > Magic link by hand. Until it is, the email still holds the link and the code box has nothing to enter.
+- The link handler (`auth-callback`, `emailRedirectTo`) is kept as a fallback for a template that still contains a link; it can be removed once only codes are used.
+
 ---
 
 ## Phase 5: Admin CRUD part 1 (reference data and people)
