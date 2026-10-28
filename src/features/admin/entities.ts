@@ -6,13 +6,33 @@ export type Row = Record<string, any>;
 export type FieldDef = {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'date' | 'select' | 'permissions' | 'overrides';
+  type: 'text' | 'textarea' | 'number' | 'date' | 'time' | 'select' | 'permissions' | 'overrides' | 'location-picker';
   required?: boolean;
   placeholder?: string;
   help?: string;
   options?: { value: string; label: string }[];
   /** Options loaded from a table (for example the role or email format of a user). */
-  optionsFrom?: { table: string; value: string; label: string; order: string };
+  optionsFrom?: {
+    table: string;
+    value: string;
+    label: string;
+    order: string;
+    /** Columns to load when the label is built from several (default: value and label). */
+    select?: string;
+    format?: (row: Row) => string;
+    like?: { column: string; pattern: string };
+  };
+  /** Format check on top of the type, with the message shown on the field. */
+  pattern?: { regex: RegExp; message: string };
+  /** A number that may be negative (for example the beacon signal strength). */
+  signed?: boolean;
+  uppercase?: boolean;
+  /** A fixed list whose value is stored as a number (weekday). */
+  asNumber?: boolean;
+  /** Label of a "none" choice, for a foreign key that may be empty (an unassigned beacon). */
+  allowEmpty?: string;
+  /** When editing, asks for confirmation before an existing value changes. Receives the old and new labels. */
+  confirmChange?: (from: string, to: string) => string;
   /** Cannot change after creation (a user's ID and email are tied to their sign-in account). */
   createOnly?: boolean;
   defaultValue?: string;
@@ -23,11 +43,15 @@ export type EntityDef = {
   label: string;
   singular: string;
   table: string;
+  /** Column that identifies a row (default `id`; NFC tags use their UID). */
+  idColumn?: string;
   /** Permission that opens the screens. RLS is the real enforcement. */
   permission: string;
   select: string;
   orderBy: string;
   searchColumns: string[];
+  /** Search over text built from the row (including joined names); used when columns are not enough. */
+  searchText?: (row: Row) => string;
   columns: { label: string; value: (row: Row) => string }[];
   title: (row: Row) => string;
   fields: FieldDef[];
@@ -37,6 +61,8 @@ export type EntityDef = {
   canDelete?: boolean;
   /** Read-only attributes shown on the details screen, in addition to the form fields. */
   readOnly?: { label: string; value: (row: Row) => string }[];
+  /** Details show only `readOnly` (for entities whose fields are ids or need joined names). */
+  detailsFromReadOnly?: boolean;
 };
 
 const dateTime = (value: unknown) => (value ? new Date(String(value)).toLocaleString() : '');
@@ -46,6 +72,24 @@ const audit: EntityDef['readOnly'] = [
 ];
 
 const countOf = (row: Row, relation: string) => String(row[relation]?.[0]?.count ?? 0);
+
+export const rowId = (entity: EntityDef, row: Row) => String(row[entity.idColumn ?? 'id']);
+
+export const weekDays = [
+  { value: '1', label: 'Mon' },
+  { value: '2', label: 'Tue' },
+  { value: '3', label: 'Wed' },
+  { value: '4', label: 'Thu' },
+  { value: '5', label: 'Fri' },
+  { value: '6', label: 'Sat' },
+  { value: '7', label: 'Sun' },
+];
+export const dayName = (value: unknown) => weekDays.find((day) => day.value === String(value))?.label ?? '';
+export const hhmm = (value: unknown) => String(value ?? '').slice(0, 5);
+const uuidPattern = {
+  regex: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  message: 'Use the UUID format 8-4-4-4-12',
+};
 
 export const entities: EntityDef[] = [
   {
@@ -98,6 +142,172 @@ export const entities: EntityDef[] = [
       { name: 'description', label: 'Description', type: 'textarea' },
     ],
     readOnly: [{ label: 'ID', value: (row) => String(row.id) }, ...audit],
+  },
+  {
+    key: 'schedules',
+    label: 'Schedules',
+    singular: 'schedule',
+    table: 'class_schedule',
+    permission: 'classes.manage',
+    select:
+      '*, class(name), location(name), lecturer:users!fk_class_schedule_lecturer_id(first_name, last_name), academic_period(name), frequency(name)',
+    orderBy: 'week_day',
+    searchColumns: [],
+    searchText: (row) => `${row.class?.name ?? ''} ${row.location?.name ?? ''} ${row.lecturer?.last_name ?? ''}`,
+    filter: { label: 'Day', value: (row) => dayName(row.week_day), options: weekDays.map((day) => day.label) },
+    columns: [
+      { label: 'When', value: (row) => `${dayName(row.week_day)} ${hhmm(row.start_time)} to ${hhmm(row.end_time)}` },
+      { label: 'Location', value: (row) => row.location?.name ?? '' },
+      { label: 'Lecturer', value: (row) => `${row.lecturer?.first_name ?? ''} ${row.lecturer?.last_name ?? ''}` },
+      { label: 'Period', value: (row) => row.academic_period?.name ?? '' },
+      { label: 'Frequency', value: (row) => row.frequency?.name ?? '' },
+    ],
+    title: (row) => row.class?.name ?? 'Schedule',
+    fields: [
+      { name: 'class_id', label: 'Class', type: 'select', required: true, optionsFrom: { table: 'class', value: 'id', label: 'name', order: 'name' } },
+      {
+        name: 'academic_period_id',
+        label: 'Period',
+        type: 'select',
+        required: true,
+        optionsFrom: { table: 'academic_period', value: 'id', label: 'name', order: 'start_date' },
+      },
+      {
+        name: 'frequency_id',
+        label: 'Frequency',
+        type: 'select',
+        required: true,
+        optionsFrom: { table: 'frequency', value: 'id', label: 'name', order: 'interval_days' },
+      },
+      {
+        name: 'lecturer_id',
+        label: 'Lecturer',
+        type: 'select',
+        required: true,
+        optionsFrom: {
+          table: 'users',
+          value: 'id',
+          label: 'id',
+          order: 'id',
+          select: 'id, first_name, last_name',
+          format: (row) => `${row.id} ${row.first_name} ${row.last_name}`,
+          like: { column: 'id', pattern: 'L%' },
+        },
+      },
+      { name: 'week_day', label: 'Day', type: 'select', required: true, asNumber: true, defaultValue: '1', options: weekDays },
+      { name: 'start_time', label: 'Start time', type: 'time', required: true, placeholder: '09:00' },
+      { name: 'end_time', label: 'End time', type: 'time', required: true, placeholder: '11:00' },
+      { name: 'location_id', label: 'Location', type: 'location-picker', required: true },
+    ],
+    detailsFromReadOnly: true,
+    readOnly: [
+      { label: 'When', value: (row) => `${dayName(row.week_day)} ${hhmm(row.start_time)} to ${hhmm(row.end_time)}` },
+      { label: 'Location', value: (row) => row.location?.name ?? '' },
+      { label: 'Lecturer', value: (row) => `${row.lecturer?.first_name ?? ''} ${row.lecturer?.last_name ?? ''}` },
+      { label: 'Period', value: (row) => row.academic_period?.name ?? '' },
+      { label: 'Frequency', value: (row) => row.frequency?.name ?? '' },
+      { label: 'ID', value: (row) => String(row.id) },
+      ...audit,
+    ],
+  },
+  {
+    key: 'locations',
+    label: 'Locations',
+    singular: 'location',
+    table: 'location',
+    permission: 'locations.manage',
+    // Not `*`: clients have no privilege on the QR secret column, so asking for it fails.
+    select: 'id, name, qr_enabled, created_at, updated_at',
+    orderBy: 'name',
+    searchColumns: ['name'],
+    filter: { label: 'QR check-in', value: (row) => (row.qr_enabled ? 'On' : 'Off'), options: ['On', 'Off'] },
+    columns: [{ label: 'QR check-in', value: (row) => (row.qr_enabled ? 'On' : 'Off') }],
+    title: (row) => row.name,
+    fields: [{ name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Room 1.01' }],
+    readOnly: [{ label: 'ID', value: (row) => String(row.id) }, ...audit],
+  },
+  {
+    key: 'beacons',
+    label: 'Beacons',
+    singular: 'beacon',
+    table: 'beacon',
+    permission: 'locations.manage',
+    select: '*, location(name)',
+    orderBy: 'id',
+    searchColumns: ['uuid'],
+    searchText: (row) => `${row.uuid} ${row.major} ${row.minor} ${row.location?.name ?? ''}`,
+    filter: { label: 'Status', value: (row) => (row.location_id ? 'Assigned' : 'Spare'), options: ['Assigned', 'Spare'] },
+    columns: [
+      { label: 'Major / minor', value: (row) => `${row.major} / ${row.minor}` },
+      { label: 'Location', value: (row) => row.location?.name ?? 'Not assigned' },
+    ],
+    title: (row) => `Beacon ${String(row.uuid).slice(0, 8)}`,
+    fields: [
+      { name: 'uuid', label: 'UUID', type: 'text', required: true, placeholder: '8-4-4-4-12 hex', pattern: uuidPattern },
+      { name: 'major', label: 'Major (0 to 65535)', type: 'number', required: true },
+      { name: 'minor', label: 'Minor (0 to 65535)', type: 'number', required: true },
+      { name: 'rssi_calibrated', label: 'Signal at 1 m (-127 to 0)', type: 'number', required: true, signed: true, placeholder: '-59' },
+      {
+        name: 'location_id',
+        label: 'Location',
+        type: 'select',
+        allowEmpty: 'Not assigned',
+        optionsFrom: { table: 'location', value: 'id', label: 'name', order: 'name' },
+        confirmChange: (from, to) => `Move this beacon from ${from} to ${to}? ${from} will no longer have it.`,
+      },
+    ],
+    detailsFromReadOnly: true,
+    readOnly: [
+      { label: 'UUID', value: (row) => row.uuid },
+      { label: 'Major', value: (row) => String(row.major) },
+      { label: 'Minor', value: (row) => String(row.minor) },
+      { label: 'Signal at 1 m', value: (row) => String(row.rssi_calibrated) },
+      { label: 'Location', value: (row) => row.location?.name ?? 'Not assigned' },
+      { label: 'ID', value: (row) => String(row.id) },
+      ...audit,
+    ],
+  },
+  {
+    key: 'nfc-tags',
+    label: 'NFC tags',
+    singular: 'NFC tag',
+    table: 'nfc_tags',
+    idColumn: 'nfc_uid',
+    permission: 'locations.manage',
+    // Not `*`: the payload token column is not readable by clients.
+    select: 'nfc_uid, location_id, created_at, updated_at, location(name)',
+    orderBy: 'nfc_uid',
+    searchColumns: ['nfc_uid'],
+    searchText: (row) => `${row.nfc_uid} ${row.location?.name ?? ''}`,
+    filter: { label: 'Status', value: (row) => (row.location_id ? 'Assigned' : 'Spare'), options: ['Assigned', 'Spare'] },
+    columns: [{ label: 'Location', value: (row) => row.location?.name ?? 'Not assigned' }],
+    title: (row) => row.nfc_uid,
+    fields: [
+      {
+        name: 'nfc_uid',
+        label: 'Tag UID',
+        type: 'text',
+        required: true,
+        createOnly: true,
+        uppercase: true,
+        placeholder: '04A1B2C3',
+        help: '8, 14 or 20 hex characters.',
+        pattern: {
+          regex: /^[0-9A-Fa-f]{8}([0-9A-Fa-f]{6}){0,2}$/,
+          message: 'Use 8, 14 or 20 hex characters (0 to 9, A to F)',
+        },
+      },
+      {
+        name: 'location_id',
+        label: 'Location',
+        type: 'select',
+        allowEmpty: 'Not assigned',
+        optionsFrom: { table: 'location', value: 'id', label: 'name', order: 'name' },
+        confirmChange: (from, to) => `Move this tag from ${from} to ${to}?`,
+      },
+    ],
+    detailsFromReadOnly: true,
+    readOnly: [{ label: 'Location', value: (row) => row.location?.name ?? 'Not assigned' }, ...audit],
   },
   {
     key: 'frequencies',

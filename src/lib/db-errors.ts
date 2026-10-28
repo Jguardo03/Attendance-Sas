@@ -56,7 +56,7 @@ const fallback = {
 
 // Adding a constraint to the database needs one line here so its fields get marked.
 // `message` replaces the generic wording when the constraint says more than the code can.
-export const constraintInfo: Record<string, { fields: string[]; message?: string }> = {
+export const constraintInfo: Record<string, { fields: string[]; title?: string; message?: string }> = {
   uq_role_name: { fields: ['name'], message: 'Role names must be unique. Use a different name or edit the existing role.' },
   uq_permissions_name: { fields: ['name'], message: 'Permission names must be unique.' },
   uq_email_parm_format: { fields: ['format'], message: 'This email format is already listed.' },
@@ -73,6 +73,32 @@ export const constraintInfo: Record<string, { fields: string[]; message?: string
   fk_class_schedule_class_id: { fields: [], message: 'Schedules still use this class. Remove or move them first.' },
   fk_class_schedule_frequency_id: { fields: [], message: 'Schedules still use this frequency. Remove or move them first.' },
   fk_users_email_parm_id: { fields: [], message: 'People still use this email format. Move them first.' },
+  // Phase 6: rooms, equipment, timetable
+  uq_location_name: { fields: ['name'], message: 'Location names must be unique.' },
+  uq_beacon_identity: { fields: ['uuid', 'major', 'minor'], message: 'A beacon with this UUID, major and minor already exists.' },
+  pk_nfc_tags: { fields: ['nfc_uid'], message: 'This tag is already registered.' },
+  chk_nfc_tags_nfc_uid: { fields: ['nfc_uid'], message: 'The tag UID must be 8, 14 or 20 hex characters.' },
+  chk_beacon_major: { fields: ['major'], message: 'Major must be from 0 to 65535.' },
+  chk_beacon_minor: { fields: ['minor'], message: 'Minor must be from 0 to 65535.' },
+  chk_beacon_rssi_calibrated: { fields: ['rssi_calibrated'], message: 'Signal strength must be from -127 to 0.' },
+  chk_schedule_times: { fields: ['start_time', 'end_time'], message: 'The end time must be after the start time.' },
+  uq_schedule_location_slot: {
+    fields: ['location_id', 'start_time', 'end_time', 'week_day'],
+    title: 'Location already booked',
+    message: 'This location is booked at that time in this period. Choose another location or time.',
+  },
+  uq_schedule_lecturer_slot: {
+    fields: ['lecturer_id', 'start_time', 'end_time', 'week_day'],
+    title: 'Lecturer already booked',
+    message: 'This lecturer already teaches at that time in this period. Choose another lecturer or time.',
+  },
+  uq_enrollment_user_schedule: { fields: [], title: 'Already enrolled', message: 'This student is already enrolled in this schedule.' },
+  uq_session_schedule_date: { fields: [], title: 'Session already exists', message: 'This schedule already has a session on that date.' },
+  chk_session_override_times: { fields: [], message: 'The new end time must be after the new start time.' },
+  fk_class_schedule_location_id: { fields: [], message: 'Schedules still use this location. Move or delete them first.' },
+  fk_class_schedule_lecturer_id: { fields: [], message: 'Schedules still use this lecturer. Move or delete them first.' },
+  fk_enrollment_class_schedule_id: { fields: [], message: 'Students are still enrolled in this schedule. Remove them first.' },
+  fk_class_session_class_schedule_id: { fields: [], message: 'This schedule still has sessions with attendance. Remove those first.' },
 };
 
 export function constraintFromError(error: DbErrorLike): string | undefined {
@@ -94,9 +120,11 @@ export function mapDbError(error: DbErrorLike, context: Context): FriendlyError 
   }
   const constraint = constraintFromError(error);
   const info = constraint ? constraintInfo[constraint] : undefined;
-  const conflictValue = info?.fields.map((field) => context.values?.[field]).find((value) => value);
+  // An exclusion clash names a booking, not a typed value; the screen looks that booking up itself.
+  const conflictValue =
+    error.code === '23P01' ? undefined : info?.fields.map((field) => context.values?.[field]).find((value) => value);
   return {
-    title: fill(entry.title, context.item),
+    title: info?.title ?? fill(entry.title, context.item),
     message: info?.message ?? fill(entry.message, context.item),
     action: entry.action,
     actionLabel: entry.actionLabel,
