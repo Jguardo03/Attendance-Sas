@@ -142,10 +142,11 @@ CREATE TABLE location (
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     CONSTRAINT pk_location PRIMARY KEY (id),
-    CONSTRAINT uq_location_name UNIQUE (name),
     CONSTRAINT uq_location_qr_secret_seed UNIQUE (qr_secret_seed),
     CONSTRAINT chk_location_qr_secret_seed CHECK (octet_length(qr_secret_seed) BETWEEN 16 AND 64)
 );
+-- Names are unique ignoring case and surrounding spaces (Room 1 = room 1).
+CREATE UNIQUE INDEX uq_location_name_ci ON location (lower(btrim(name)));
 
 -- Bluetooth (iBeacon) devices used to confirm a student is in the room.
 CREATE TABLE beacon (

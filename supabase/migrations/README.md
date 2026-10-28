@@ -14,6 +14,7 @@ original version numbers. To rebuild a fresh project, apply them in filename ord
 | 5 | `revoke_default_table_privileges` | Removes TRUNCATE/REFERENCES/TRIGGER/MAINTAIN that Supabase grants to `anon` and `authenticated` by default. |
 | 6 | `advisor_fixes_policies_and_execute_grants` | Splits "manage" policies so each table has one SELECT policy; revokes `EXECUTE` on `rls_auto_enable()` and, after sign-in, on `is_allowed_email()`. |
 | 7 | `phase6_qr_flag_availability_and_session_generation` | Generated `location.qr_enabled` flag (readable, shows QR on/off without exposing the seed); `locations_availability()` (free/booked rooms for a slot, mirrors the overlap constraint); `generate_sessions()` (creates a schedule's sessions from the period dates and frequency). Checked by `supabase/tests/phase6_sessions_and_availability.sql`. |
+| 8 | `location_name_case_insensitive` | Replaces the case-sensitive unique name on `location` with a unique index on `lower(btrim(name))`, so "Room 1" and "room 1 " are the same room. |
 
 Design notes
 - Authorization data is in the JWT: the custom access token hook adds `app_user_id`, `app_role` and `permissions[]`.

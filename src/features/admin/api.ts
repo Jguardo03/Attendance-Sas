@@ -208,7 +208,12 @@ export async function findExisting(entity: EntityDef, fields: string[], values: 
   for (const field of used) {
     const def = entity.fields.find((candidate) => candidate.name === field);
     const raw = String(values[field]).trim();
-    query = query.eq(field, def?.uppercase ? raw.toUpperCase() : raw);
+    if (def?.caseInsensitive) {
+      // ilike without wildcards: escape % and _ so the name is matched as typed, only ignoring capitals.
+      query = query.ilike(field, raw.replace(/[\\%_]/g, (char) => `\\${char}`));
+    } else {
+      query = query.eq(field, def?.uppercase ? raw.toUpperCase() : raw);
+    }
   }
   const { data } = await query.maybeSingle();
   return data ? String((data as unknown as Row)[idColumn(entity)]) : null;

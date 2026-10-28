@@ -74,7 +74,7 @@ export const constraintInfo: Record<string, { fields: string[]; title?: string; 
   fk_class_schedule_frequency_id: { fields: [], message: 'Schedules still use this frequency. Remove or move them first.' },
   fk_users_email_parm_id: { fields: [], message: 'People still use this email format. Move them first.' },
   // Phase 6: rooms, equipment, timetable
-  uq_location_name: { fields: ['name'], message: 'Location names must be unique.' },
+  uq_location_name_ci: { fields: ['name'], message: 'A location with this name already exists. Names are the same whatever the capital letters.' },
   uq_beacon_identity: { fields: ['uuid', 'major', 'minor'], message: 'A beacon with this UUID, major and minor already exists.' },
   pk_nfc_tags: { fields: ['nfc_uid'], message: 'This tag is already registered.' },
   chk_nfc_tags_nfc_uid: { fields: ['nfc_uid'], message: 'The tag UID must be 8, 14 or 20 hex characters.' },
