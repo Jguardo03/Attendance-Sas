@@ -17,14 +17,14 @@ describe('mapDbError', () => {
 
   it('maps a duplicate role name to "Role already exists" and marks the name field', () => {
     const result = mapDbError(
-      { code: '23505', message: 'duplicate key value violates unique constraint "uq_role_name"' },
+      { code: '23505', message: 'duplicate key value violates unique constraint "uq_role_name_ci"' },
       { item: 'role', values: { name: 'Lecturer' } },
     );
     expect(result.title).toBe('Role already exists');
     expect(result.actionLabel).toBe('Open existing');
     expect(result.fields).toEqual(['name']);
     expect(result.conflict).toBe('role: Lecturer');
-    expect(result.message).toContain('unique');
+    expect(result.message).toContain('already exists');
   });
 
   it('maps a delete blocked by schedules to "still in use"', () => {
@@ -223,5 +223,30 @@ describe('booking clash errors', () => {
     const inUse = mapDbError({ code: '23503', message: 'violates foreign key constraint "fk_class_schedule_location_id"' }, { item: 'location' });
     expect(inUse.title).toBe('Location is still in use');
     expect(inUse.message).toContain('Schedules still use this location');
+  });
+});
+
+describe('case-insensitive names', () => {
+  it('flags every unique name field so Open existing ignores capitals', () => {
+    for (const key of ['periods', 'classes', 'frequencies', 'permissions', 'roles', 'locations']) {
+      const field = findEntity(key)!.fields.find((candidate) => candidate.name === 'name');
+      expect({ key, caseInsensitive: field?.caseInsensitive }).toEqual({ key, caseInsensitive: true });
+    }
+  });
+
+  it('maps each name index to a clear message on the name field', () => {
+    const cases: [string, string][] = [
+      ['uq_role_name_ci', 'role'],
+      ['uq_permissions_name_ci', 'permission'],
+      ['uq_class_name_ci', 'class'],
+      ['uq_academic_period_name_ci', 'period'],
+      ['uq_frequency_name_ci', 'frequency'],
+      ['uq_location_name_ci', 'location'],
+    ];
+    for (const [constraint, item] of cases) {
+      const result = mapDbError({ code: '23505', message: `duplicate key value violates unique constraint "${constraint}"` }, { item });
+      expect(result.fields).toEqual(['name']);
+      expect(result.message).toContain('whatever the capital letters');
+    }
   });
 });
