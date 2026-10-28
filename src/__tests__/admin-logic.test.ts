@@ -137,3 +137,91 @@ describe('form validation and payload', () => {
     expect(edit).toEqual({ first_name: 'A', last_name: 'B', role_id: 3 });
   });
 });
+
+describe('Phase 6 entities', () => {
+  const schedules = findEntity('schedules')!;
+  const beacons = findEntity('beacons')!;
+  const tags = findEntity('nfc-tags')!;
+
+  it('never asks for columns that clients cannot read', () => {
+    // location.qr_secret_seed and nfc_tags.payload_token have no client privilege; `*` would fail.
+    expect(findEntity('locations')!.select).not.toContain('*');
+    expect(findEntity('locations')!.select).not.toContain('qr_secret_seed');
+    expect(tags.select).not.toContain('*');
+    expect(tags.select).not.toContain('payload_token');
+    expect(tags.idColumn).toBe('nfc_uid');
+  });
+
+  it('validates schedule times and requires a location', () => {
+    const base = { ...initialValues(schedules), class_id: '1', academic_period_id: '1', frequency_id: '1', lecturer_id: 'L1000001', location_id: '1' };
+    expect(validateValues(schedules, { ...base, start_time: '9am', end_time: '11:00' }, true)).toEqual({ start_time: 'Use the 24 hour format HH:MM' });
+    expect(validateValues(schedules, { ...base, start_time: '11:00', end_time: '09:00' }, true)).toEqual({ end_time: 'The end time must be after the start time' });
+    expect(validateValues(schedules, { ...base, start_time: '09:00', end_time: '11:00', location_id: '' }, true)).toEqual({ location_id: 'Required' });
+    expect(validateValues(schedules, { ...base, start_time: '09:00', end_time: '11:00' }, true)).toEqual({});
+  });
+
+  it('builds a schedule payload with numbers and the weekday as a number', () => {
+    const payload = buildPayload(
+      schedules,
+      { class_id: '2', academic_period_id: '3', frequency_id: '1', lecturer_id: 'L1000001', week_day: '3', start_time: '09:00', end_time: '11:00', location_id: '5' },
+      true,
+    );
+    expect(payload).toEqual({ class_id: 2, academic_period_id: 3, frequency_id: 1, lecturer_id: 'L1000001', week_day: 3, start_time: '09:00', end_time: '11:00', location_id: 5 });
+  });
+
+  it('shows stored times as HH:MM in the edit form', () => {
+    expect(initialValues(schedules, { start_time: '09:00:00', end_time: '10:30:00', week_day: 2 }).start_time).toBe('09:00');
+  });
+
+  it('checks beacon ranges, the UUID format and allows an unassigned beacon', () => {
+    const values = { uuid: 'not-a-uuid', major: '70000', minor: '1', rssi_calibrated: '5', location_id: '' };
+    expect(validateValues(beacons, values, true)).toEqual({
+      uuid: 'Use the UUID format 8-4-4-4-12',
+      major: 'Use a value from 0 to 65535',
+      rssi_calibrated: 'Use a value from -127 to 0',
+    });
+    const ok = { uuid: 'f7826da6-4fa2-4e98-8024-bc5b71e0893e', major: '1', minor: '2', rssi_calibrated: '-59', location_id: '' };
+    expect(validateValues(beacons, ok, true)).toEqual({});
+    expect(buildPayload(beacons, ok, true)).toEqual({ uuid: ok.uuid, major: 1, minor: 2, rssi_calibrated: -59, location_id: null });
+  });
+
+  it('checks and uppercases the NFC tag UID', () => {
+    expect(validateValues(tags, { nfc_uid: '04a1b2', location_id: '' }, true)).toEqual({ nfc_uid: 'Use 8, 14 or 20 hex characters (0 to 9, A to F)' });
+    expect(validateValues(tags, { nfc_uid: '04a1b2c3', location_id: '' }, true)).toEqual({});
+    expect(buildPayload(tags, { nfc_uid: '04a1b2c3', location_id: '2' }, true)).toEqual({ nfc_uid: '04A1B2C3', location_id: 2 });
+  });
+
+  it('asks before moving a beacon or tag to another location', () => {
+    const field = beacons.fields.find((candidate) => candidate.name === 'location_id')!;
+    expect(field.confirmChange!('Room 1.01', 'Room 2.02')).toContain('Move this beacon from Room 1.01 to Room 2.02');
+  });
+});
+
+describe('booking clash errors', () => {
+  it('names a location clash and marks the room and time fields', () => {
+    const result = mapDbError(
+      { code: '23P01', message: 'conflicting key value violates exclusion constraint "uq_schedule_location_slot"' },
+      { item: 'schedule' },
+    );
+    expect(result.title).toBe('Location already booked');
+    expect(result.actionLabel).toBe('View booking');
+    expect(result.fields).toEqual(['location_id', 'start_time', 'end_time', 'week_day']);
+    expect(result.conflict).toBeUndefined();
+  });
+
+  it('names a lecturer clash separately', () => {
+    const result = mapDbError(
+      { code: '23P01', message: 'violates exclusion constraint "uq_schedule_lecturer_slot"' },
+      { item: 'schedule' },
+    );
+    expect(result.title).toBe('Lecturer already booked');
+    expect(result.fields[0]).toBe('lecturer_id');
+  });
+
+  it('explains a duplicate beacon identity and a location still in use', () => {
+    expect(mapDbError({ code: '23505', message: 'violates unique constraint "uq_beacon_identity"' }, { item: 'beacon' }).message).toContain('already exists');
+    const inUse = mapDbError({ code: '23503', message: 'violates foreign key constraint "fk_class_schedule_location_id"' }, { item: 'location' });
+    expect(inUse.title).toBe('Location is still in use');
+    expect(inUse.message).toContain('Schedules still use this location');
+  });
+});
