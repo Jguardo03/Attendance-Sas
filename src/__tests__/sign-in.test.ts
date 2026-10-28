@@ -1,9 +1,9 @@
 import { parseAuthCallback } from '@/lib/auth-callback';
-import { requestSignInLink } from '@/lib/sign-in';
+import { requestSignInCode, verifySignInCode } from '@/lib/sign-in';
 import { supabase } from '@/lib/supabase';
 
 jest.mock('@/lib/supabase', () => ({
-  supabase: { rpc: jest.fn(), auth: { signInWithOtp: jest.fn() } },
+  supabase: { rpc: jest.fn(), auth: { signInWithOtp: jest.fn(), verifyOtp: jest.fn() } },
 }));
 
 // Jest has no app manifest for expo-linking to read the scheme from.
@@ -11,23 +11,25 @@ jest.mock('expo-linking', () => ({ createURL: (path: string) => `attendancesas:/
 
 const rpc = supabase!.rpc as unknown as jest.Mock;
 const signInWithOtp = supabase!.auth.signInWithOtp as unknown as jest.Mock;
+const verifyOtp = supabase!.auth.verifyOtp as unknown as jest.Mock;
 
 beforeEach(() => {
   rpc.mockReset();
   signInWithOtp.mockReset();
+  verifyOtp.mockReset();
 });
 
-describe('requestSignInLink', () => {
+describe('requestSignInCode', () => {
   it('rejects a non-institutional email without sending anything', async () => {
     rpc.mockResolvedValue({ data: false, error: null });
-    expect(await requestSignInLink('someone@gmail.com')).toBe('not-institutional');
+    expect(await requestSignInCode('someone@gmail.com')).toBe('not-institutional');
     expect(signInWithOtp).not.toHaveBeenCalled();
   });
 
-  it('sends the link for an allowed email and never creates users', async () => {
+  it('sends the code for an allowed email and never creates users', async () => {
     rpc.mockResolvedValue({ data: true, error: null });
     signInWithOtp.mockResolvedValue({ error: null });
-    expect(await requestSignInLink('  S1000001@Mailinator.com ')).toBe('sent');
+    expect(await requestSignInCode('  S1000001@Mailinator.com ')).toBe('sent');
     expect(signInWithOtp).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 's1000001@mailinator.com',
@@ -39,15 +41,43 @@ describe('requestSignInLink', () => {
   it('answers the same for an allowed domain with no account', async () => {
     rpc.mockResolvedValue({ data: true, error: null });
     signInWithOtp.mockResolvedValue({ error: { status: 422, message: 'Signups not allowed for otp' } });
-    expect(await requestSignInLink('nobody@mailinator.com')).toBe('sent');
+    expect(await requestSignInCode('nobody@mailinator.com')).toBe('sent');
   });
 
   it('reports rate limiting and other failures', async () => {
     rpc.mockResolvedValue({ data: true, error: null });
     signInWithOtp.mockResolvedValueOnce({ error: { status: 429, message: 'rate limit' } });
-    expect(await requestSignInLink('s1000001@mailinator.com')).toBe('rate-limited');
+    expect(await requestSignInCode('s1000001@mailinator.com')).toBe('rate-limited');
     signInWithOtp.mockResolvedValueOnce({ error: { status: 500, message: 'boom' } });
-    expect(await requestSignInLink('s1000001@mailinator.com')).toBe('unavailable');
+    expect(await requestSignInCode('s1000001@mailinator.com')).toBe('unavailable');
+  });
+});
+
+describe('verifySignInCode', () => {
+  it('signs in with a correct code, using the email type', async () => {
+    verifyOtp.mockResolvedValue({ error: null });
+    expect(await verifySignInCode(' S1000001@Mailinator.com ', ' 123456 ')).toBe('ok');
+    expect(verifyOtp).toHaveBeenCalledWith({ email: 's1000001@mailinator.com', token: '123456', type: 'email' });
+  });
+
+  it('rejects a code of the wrong shape without calling Supabase', async () => {
+    expect(await verifySignInCode('s1000001@mailinator.com', '12ab')).toBe('invalid');
+    expect(await verifySignInCode('s1000001@mailinator.com', '12345')).toBe('invalid');
+    expect(verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it('gives one answer for a wrong, expired or reused code', async () => {
+    verifyOtp.mockResolvedValueOnce({ error: { status: 403, code: 'otp_expired', message: 'Token has expired or is invalid' } });
+    expect(await verifySignInCode('s1000001@mailinator.com', '123456')).toBe('invalid');
+    verifyOtp.mockResolvedValueOnce({ error: { status: 400, message: 'invalid' } });
+    expect(await verifySignInCode('s1000001@mailinator.com', '654321')).toBe('invalid');
+  });
+
+  it('reports rate limiting and server failures separately', async () => {
+    verifyOtp.mockResolvedValueOnce({ error: { status: 429, message: 'rate limit' } });
+    expect(await verifySignInCode('s1000001@mailinator.com', '123456')).toBe('rate-limited');
+    verifyOtp.mockResolvedValueOnce({ error: { status: 500, message: 'boom' } });
+    expect(await verifySignInCode('s1000001@mailinator.com', '123456')).toBe('unavailable');
   });
 });
 
