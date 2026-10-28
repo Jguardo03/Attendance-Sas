@@ -1,3 +1,5 @@
+import { parseIso } from '@/lib/dates';
+
 import type { EntityDef, FieldDef, Row } from './entities';
 
 export type FormValues = Record<string, any>;
@@ -31,7 +33,7 @@ export function validateValues(
     const value = String(values[field.name] ?? '').trim();
     if (field.required && !value) {
       errors[field.name] = 'Required';
-    } else if (value && field.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    } else if (value && field.type === 'date' && !parseIso(value)) {
       errors[field.name] = 'Use the format YYYY-MM-DD';
     } else if (value && field.type === 'time' && !timeRegex.test(value)) {
       errors[field.name] = 'Use the 24 hour format HH:MM';
@@ -48,6 +50,9 @@ export function validateValues(
     if (email && lookups.emailFormat && !email.endsWith(lookups.emailFormat.toLowerCase())) {
       errors.email = `Email must end with ${lookups.emailFormat}`;
     }
+  }
+  if (entity.key === 'periods' && !errors.start_date && !errors.finish_date && values.start_date && values.finish_date) {
+    if (String(values.finish_date) <= String(values.start_date)) errors.finish_date = 'The finish date must be after the start date';
   }
   if (entity.key === 'schedules' && !errors.start_time && !errors.end_time && values.start_time && values.end_time) {
     if (values.end_time <= values.start_time) errors.end_time = 'The end time must be after the start time';

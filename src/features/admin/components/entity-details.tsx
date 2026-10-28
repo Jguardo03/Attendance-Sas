@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Text } from '@/components/ui';
+import { Badge, Button, Card, Text, useScrollUpOn } from '@/components/ui';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
 import { deleteEntity, getRow, listPermissions, loadRelations } from '../api';
@@ -23,6 +23,8 @@ export function EntityDetails({ entity, id }: { entity: EntityDef; id: string })
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<FriendlyError | null>(null);
+  // The error box is at the top of the details; bring it into view when one appears.
+  useScrollUpOn(failure);
 
   const row = useQuery({ queryKey: ['admin', entity.key, id], queryFn: () => getRow(entity, id) });
   const relations = useQuery({ queryKey: ['admin', entity.key, id, 'relations'], queryFn: () => loadRelations(entity, id) });

@@ -3,38 +3,52 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Button, Card, Select, Text, TextField } from '@/components/ui';
+import { Button, Card, Dropdown, Text, TextField } from '@/components/ui';
 
 import { listRows } from '../api';
 import { rowId, type EntityDef } from '../entities';
 import { adminHref } from '../routes';
 
-// Search, filter and "+ Add" over any entity. Rows open the details screen.
+// Search, filters and "+ Add" over any entity. Rows open the details screen.
 export function EntityList({ entity }: { entity: EntityDef }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
+  // Chosen value per filter label; missing or 'all' means no filtering on that one.
+  const [chosen, setChosen] = useState<Record<string, string>>({});
   const rows = useQuery({ queryKey: ['admin', entity.key, 'list'], queryFn: () => listRows(entity) });
 
-  const filterOptions = useMemo(() => {
-    if (!entity.filter) return [];
-    const values = entity.filter.options ?? [...new Set((rows.data ?? []).map(entity.filter.value))].filter(Boolean);
-    return [{ value: 'all', label: 'All' }, ...values.map((value) => ({ value, label: value }))];
-  }, [entity.filter, rows.data]);
+  const filters = useMemo(
+    () =>
+      (entity.filters ?? []).map((filter) => {
+        const values = filter.options ?? [...new Set((rows.data ?? []).map(filter.value))].filter(Boolean).sort();
+        return { filter, options: [{ value: 'all', label: 'All' }, ...values.map((value) => ({ value, label: value }))] };
+      }),
+    [entity.filters, rows.data],
+  );
 
   const visible = (rows.data ?? []).filter((row) => {
-    const matchesFilter = filter === 'all' || !entity.filter || entity.filter.value(row) === filter;
+    const matchesFilters = (entity.filters ?? []).every((filter) => {
+      const value = chosen[filter.label] ?? 'all';
+      return value === 'all' || filter.value(row) === value;
+    });
     const needle = search.trim().toLowerCase();
     const haystack = entity.searchText ? entity.searchText(row) : entity.searchColumns.map((column) => String(row[column] ?? '')).join(' ');
-    const matchesSearch = !needle || haystack.toLowerCase().includes(needle);
-    return matchesFilter && matchesSearch;
+    return matchesFilters && (!needle || haystack.toLowerCase().includes(needle));
   });
 
   return (
     <View className="gap-4">
       <Button label={`+ Add ${entity.singular}`} onPress={() => router.push(adminHref(entity.key, 'new'))} />
       <TextField label="Search" value={search} onChangeText={setSearch} autoCapitalize="none" placeholder={`Search ${entity.label.toLowerCase()}`} />
-      {entity.filter ? <Select label={entity.filter.label} value={filter} options={filterOptions} onChange={setFilter} /> : null}
+      {filters.map(({ filter, options }) => (
+        <Dropdown
+          key={filter.label}
+          label={filter.label}
+          value={chosen[filter.label] ?? 'all'}
+          options={options}
+          onChange={(value) => setChosen((current) => ({ ...current, [filter.label]: value }))}
+        />
+      ))}
 
       {rows.isPending ? <Text variant="muted">Loading...</Text> : null}
       {rows.isError ? <Text variant="error">Could not load {entity.label.toLowerCase()}.</Text> : null}

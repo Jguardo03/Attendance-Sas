@@ -27,6 +27,10 @@ export type FieldDef = {
   /** A number that may be negative (for example the beacon signal strength). */
   signed?: boolean;
   uppercase?: boolean;
+  /** A date field that opens on another field's month (a finish date opens on the start date). */
+  anchorField?: string;
+  /** Uniqueness ignores capital letters, so finding the existing row must too. */
+  caseInsensitive?: boolean;
   /** A fixed list whose value is stored as a number (weekday). */
   asNumber?: boolean;
   /** Label of a "none" choice, for a foreign key that may be empty (an unassigned beacon). */
@@ -55,8 +59,8 @@ export type EntityDef = {
   columns: { label: string; value: (row: Row) => string }[];
   title: (row: Row) => string;
   fields: FieldDef[];
-  /** Filter chips over the loaded rows. Without `options`, the distinct values found are used. */
-  filter?: { label: string; value: (row: Row) => string; options?: string[] };
+  /** Dropdown filters over the loaded rows. Without `options`, the distinct values found are used. */
+  filters?: { label: string; value: (row: Row) => string; options?: string[] }[];
   /** Not offered where the database does not allow it (users have no delete grant). */
   canDelete?: boolean;
   /** Read-only attributes shown on the details screen, in addition to the form fields. */
@@ -101,7 +105,7 @@ export const entities: EntityDef[] = [
     select: '*',
     orderBy: 'start_date',
     searchColumns: ['name'],
-    filter: { label: 'Status', value: (row) => row.status, options: ['planning', 'active', 'finished'] },
+    filters: [{ label: 'Status', value: (row) => row.status, options: ['planning', 'active', 'finished'] }],
     columns: [
       { label: 'Status', value: (row) => row.status },
       { label: 'From', value: (row) => `${row.start_date} to ${row.finish_date}` },
@@ -109,8 +113,8 @@ export const entities: EntityDef[] = [
     title: (row) => row.name,
     fields: [
       { name: 'name', label: 'Name', type: 'text', required: true },
-      { name: 'start_date', label: 'Start date', type: 'date', required: true, placeholder: 'YYYY-MM-DD' },
-      { name: 'finish_date', label: 'Finish date', type: 'date', required: true, placeholder: 'YYYY-MM-DD' },
+      { name: 'start_date', label: 'Start date', type: 'date', required: true },
+      { name: 'finish_date', label: 'Finish date', type: 'date', required: true, anchorField: 'start_date' },
       {
         name: 'status',
         label: 'Status',
@@ -154,7 +158,11 @@ export const entities: EntityDef[] = [
     orderBy: 'week_day',
     searchColumns: [],
     searchText: (row) => `${row.class?.name ?? ''} ${row.location?.name ?? ''} ${row.lecturer?.last_name ?? ''}`,
-    filter: { label: 'Day', value: (row) => dayName(row.week_day), options: weekDays.map((day) => day.label) },
+    filters: [
+      { label: 'Period', value: (row) => row.academic_period?.name ?? '' },
+      { label: 'Class', value: (row) => row.class?.name ?? '' },
+      { label: 'Day', value: (row) => dayName(row.week_day), options: weekDays.map((day) => day.label) },
+    ],
     columns: [
       { label: 'When', value: (row) => `${dayName(row.week_day)} ${hhmm(row.start_time)} to ${hhmm(row.end_time)}` },
       { label: 'Location', value: (row) => row.location?.name ?? '' },
@@ -220,10 +228,10 @@ export const entities: EntityDef[] = [
     select: 'id, name, qr_enabled, created_at, updated_at',
     orderBy: 'name',
     searchColumns: ['name'],
-    filter: { label: 'QR check-in', value: (row) => (row.qr_enabled ? 'On' : 'Off'), options: ['On', 'Off'] },
+    filters: [{ label: 'QR check-in', value: (row) => (row.qr_enabled ? 'On' : 'Off'), options: ['On', 'Off'] }],
     columns: [{ label: 'QR check-in', value: (row) => (row.qr_enabled ? 'On' : 'Off') }],
     title: (row) => row.name,
-    fields: [{ name: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Room 1.01' }],
+    fields: [{ name: 'name', label: 'Name', type: 'text', required: true, caseInsensitive: true, placeholder: 'Room 1.01' }],
     readOnly: [{ label: 'ID', value: (row) => String(row.id) }, ...audit],
   },
   {
@@ -236,7 +244,7 @@ export const entities: EntityDef[] = [
     orderBy: 'id',
     searchColumns: ['uuid'],
     searchText: (row) => `${row.uuid} ${row.major} ${row.minor} ${row.location?.name ?? ''}`,
-    filter: { label: 'Status', value: (row) => (row.location_id ? 'Assigned' : 'Spare'), options: ['Assigned', 'Spare'] },
+    filters: [{ label: 'Status', value: (row) => (row.location_id ? 'Assigned' : 'Spare'), options: ['Assigned', 'Spare'] }],
     columns: [
       { label: 'Major / minor', value: (row) => `${row.major} / ${row.minor}` },
       { label: 'Location', value: (row) => row.location?.name ?? 'Not assigned' },
@@ -279,7 +287,7 @@ export const entities: EntityDef[] = [
     orderBy: 'nfc_uid',
     searchColumns: ['nfc_uid'],
     searchText: (row) => `${row.nfc_uid} ${row.location?.name ?? ''}`,
-    filter: { label: 'Status', value: (row) => (row.location_id ? 'Assigned' : 'Spare'), options: ['Assigned', 'Spare'] },
+    filters: [{ label: 'Status', value: (row) => (row.location_id ? 'Assigned' : 'Spare'), options: ['Assigned', 'Spare'] }],
     columns: [{ label: 'Location', value: (row) => row.location?.name ?? 'Not assigned' }],
     title: (row) => row.nfc_uid,
     fields: [
@@ -402,7 +410,7 @@ export const entities: EntityDef[] = [
     orderBy: 'id',
     searchColumns: ['id', 'first_name', 'last_name', 'email'],
     canDelete: false,
-    filter: { label: 'Role', value: (row) => row.role?.name ?? '' },
+    filters: [{ label: 'Role', value: (row) => row.role?.name ?? '' }],
     columns: [
       { label: 'Name', value: (row) => `${row.first_name} ${row.last_name}` },
       { label: 'Role', value: (row) => row.role?.name ?? '' },

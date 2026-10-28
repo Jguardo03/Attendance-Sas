@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Select, Text, TextField } from '@/components/ui';
+import { Badge, Button, Card, Collapsible, Select, Text, TextField } from '@/components/ui';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
 import { db, listOptions } from '../api';
@@ -154,7 +154,7 @@ function Sessions({ id, schedule }: { id: string; schedule: Row }) {
   });
 
   return (
-    <Card title={`Sessions (${sessions.data?.length ?? 0})`}>
+    <Collapsible title={`Sessions (${sessions.data?.length ?? 0})`}>
       {failure ? <CrudError error={failure} onAction={clear} onDismiss={clear} /> : null}
       <Button label={generate.isPending ? 'Generating...' : 'Generate sessions'} disabled={generate.isPending} onPress={() => { setMessage(null); generate.mutate(); }} />
       {message ? <Text variant="muted">{message}</Text> : null}
@@ -163,7 +163,7 @@ function Sessions({ id, schedule }: { id: string; schedule: Row }) {
       {sessions.data?.map((session) => (
         <SessionRow key={`${session.id}-${session.status}-${session.override_start_time}`} session={session} schedule={schedule} onChanged={refresh} />
       ))}
-    </Card>
+    </Collapsible>
   );
 }
 

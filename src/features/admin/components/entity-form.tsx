@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Button, Card, Select, Text, TextField } from '@/components/ui';
+import { Button, Card, DateField, Select, Text, TextField, TimeField, useScrollUpOn } from '@/components/ui';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
 import { findBooking, findExisting, listOptions, listPermissions, saveEntity } from '../api';
@@ -66,6 +66,8 @@ export function EntityForm({
   const [failure, setFailure] = useState<FriendlyError | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
+  // The error box is at the top of the form; bring it into view whenever one appears.
+  useScrollUpOn(failure);
 
   const needsPermissions = entity.fields.some((field) => field.type === 'permissions' || field.type === 'overrides');
   const permissions = useQuery({
@@ -130,7 +132,18 @@ export function EntityForm({
     setErrors(found);
     setFailure(null);
     setBookingId(null);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      // Same error box as a database refusal, at the top, so the screen scrolls up to it.
+      const labels = entity.fields.filter((field) => found[field.name]).map((field) => field.label);
+      setFailure({
+        title: 'Check the details',
+        message: `Fix the marked fields: ${labels.join(', ')}.`,
+        action: 'fix-field',
+        actionLabel: 'Fix field',
+        fields: Object.keys(found),
+      });
+      return;
+    }
 
     if (!confirmed && !creating) {
       for (const field of entity.fields) {
@@ -194,6 +207,29 @@ export function EntityForm({
               values={values}
               value={String(values[field.name] ?? '')}
               excludeScheduleId={id}
+              error={errors[field.name]}
+              onChange={(next) => setValue(field.name, next)}
+            />
+          );
+        }
+        if (field.type === 'date') {
+          return (
+            <DateField
+              key={field.name}
+              label={field.required ? `${field.label} *` : field.label}
+              value={String(values[field.name] ?? '')}
+              anchor={field.anchorField ? String(values[field.anchorField] ?? '') : undefined}
+              error={errors[field.name]}
+              onChange={(next) => setValue(field.name, next)}
+            />
+          );
+        }
+        if (field.type === 'time') {
+          return (
+            <TimeField
+              key={field.name}
+              label={field.required ? `${field.label} *` : field.label}
+              value={String(values[field.name] ?? '')}
               error={errors[field.name]}
               onChange={(next) => setValue(field.name, next)}
             />

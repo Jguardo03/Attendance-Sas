@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Badge, Button, Card, Text } from '@/components/ui';
+import { Badge, Button, Card, Text, useScrollUpOn } from '@/components/ui';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
 import { callFunction, db } from '../api';
@@ -26,6 +26,7 @@ export function LocationExtras({ id, qrEnabled }: { id: string; qrEnabled: boole
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<FriendlyError | null>(null);
+  useScrollUpOn(failure);
 
   const beacons = useQuery({
     queryKey: ['admin', 'locations', id, 'beacons'],
@@ -123,6 +124,7 @@ export function TagExtras({ uid }: { uid: string }) {
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
   const [failure, setFailure] = useState<FriendlyError | null>(null);
+  useScrollUpOn(failure);
 
   const regenerate = useMutation({
     mutationFn: () => callFunction('nfc-tag', { action: 'regenerate', nfc_uid: uid }),
