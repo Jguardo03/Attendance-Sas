@@ -347,6 +347,14 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - Computing session dates in the client; generate them in SQL/Edge Function so there is one definition.
 - Returning `qr_secret_seed` to the browser.
 
+### Phase 6 implementation notes (2026-10-28)
+
+- **Database (migration 7, applied and exported):** generated `location.qr_enabled` (clients cannot read the seed, so this flag is how the app shows QR on/off); `locations_availability(period, day, start, end, exclude)` and `generate_sessions(schedule)`, both SECURITY INVOKER with EXECUTE only for signed-in users. Checked on the live database: weekly over exactly 10 weeks gives 10 sessions, fortnightly 5, a re-run adds 0, an adjacent slot is free (`supabase/tests/phase6_sessions_and_availability.sql`). Access checks as admin, student, lecturer and anon are in `supabase/tests/phase6_rls.sql`; they pass. Note: a student's write to `class_session` or `location` changes 0 rows (row security filters them) rather than raising an error.
+- **Edge Functions (deployed):** `location-qr-seed` and `nfc-tag` make and store the secrets; the app never receives them. `select *` on `location` or `nfc_tags` fails for clients by design, so those entities list their columns (a Jest test guards this).
+- **Kit changes:** new field types (time, location picker), `idColumn` (NFC tags are keyed by UID), per-field pattern, signed numbers, uppercase, nullable selects with "Not assigned", and `confirmChange` ("Move beacon" asks before moving it). Four new entities: Schedules, Locations, Beacons, NFC tags. Schedule details hold Sessions (generate, reschedule, cancel, reset) and Enrolments; location details hold the QR controls and what is in or scheduled for the room.
+- **Booking clashes:** the picker shows Free / Booked: <class> before saving; the database exclusion constraints still decide. A clash shows "Location already booked" or "Lecturer already booked", marks the fields ("Booked at this time" / "Overlaps"), names the clashing schedule and links to it.
+- **Deviations / not done:** Equipment is split into Beacons and NFC tags in the Admin menu. Session reschedule changes time and room only (not the date, because of the unique schedule and date). A rescheduled room is not checked for clashes. Not yet tried in a browser by me: the pane could not sign in (email limit), so create/edit flows are covered by tests and database checks only. The "week of demo data" seed from the plan already exists (55 sessions).
+
 ---
 
 ## Phase 7: Schedules and class views for every role
