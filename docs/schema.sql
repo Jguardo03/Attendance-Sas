@@ -138,6 +138,7 @@ CREATE TABLE location (
     id INTEGER GENERATED ALWAYS AS IDENTITY NOT NULL,
     name VARCHAR(100) NOT NULL,
     qr_secret_seed BYTEA,
+    qr_enabled BOOLEAN GENERATED ALWAYS AS (qr_secret_seed IS NOT NULL) STORED,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     CONSTRAINT pk_location PRIMARY KEY (id),
@@ -496,3 +497,7 @@ CREATE INDEX ix_attendance_session_id ON attendance (session_id);
 CREATE INDEX ix_attendance_audit_changed_by ON attendance_audit (changed_by);
 
 COMMIT;
+
+-- Phase 6 functions (full definitions and grants: supabase/migrations/20261028011800_*.sql)
+-- public.locations_availability(period_id, week_day, start, end, exclude_schedule_id): free/booked rooms for a slot.
+-- public.generate_sessions(schedule_id): creates the class_session rows for a schedule; returns how many were added.

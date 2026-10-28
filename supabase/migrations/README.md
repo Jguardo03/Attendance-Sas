@@ -13,6 +13,7 @@ original version numbers. To rebuild a fresh project, apply them in filename ord
 | 4 | `rls_policies_grants_and_rpcs` | RLS on all tables, policies, explicit grants (column-level for `location` and `nfc_tags` so secrets are never readable), `is_allowed_email()`, attendance summary functions. |
 | 5 | `revoke_default_table_privileges` | Removes TRUNCATE/REFERENCES/TRIGGER/MAINTAIN that Supabase grants to `anon` and `authenticated` by default. |
 | 6 | `advisor_fixes_policies_and_execute_grants` | Splits "manage" policies so each table has one SELECT policy; revokes `EXECUTE` on `rls_auto_enable()` and, after sign-in, on `is_allowed_email()`. |
+| 7 | `phase6_qr_flag_availability_and_session_generation` | Generated `location.qr_enabled` flag (readable, shows QR on/off without exposing the seed); `locations_availability()` (free/booked rooms for a slot, mirrors the overlap constraint); `generate_sessions()` (creates a schedule's sessions from the period dates and frequency). Checked by `supabase/tests/phase6_sessions_and_availability.sql`. |
 
 Design notes
 - Authorization data is in the JWT: the custom access token hook adds `app_user_id`, `app_role` and `permissions[]`.

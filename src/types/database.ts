@@ -530,6 +530,7 @@ export type Database = {
           created_at: string
           id: number
           name: string
+          qr_enabled: boolean | null
           qr_secret_seed: string | null
           updated_at: string
         }
@@ -537,6 +538,7 @@ export type Database = {
           created_at?: string
           id?: never
           name: string
+          qr_enabled?: boolean | null
           qr_secret_seed?: string | null
           updated_at?: string
         }
@@ -544,6 +546,7 @@ export type Database = {
           created_at?: string
           id?: never
           name?: string
+          qr_enabled?: boolean | null
           qr_secret_seed?: string | null
           updated_at?: string
         }
@@ -809,7 +812,23 @@ export type Database = {
           students_below_75: number
         }[]
       }
+      generate_sessions: { Args: { p_schedule_id: number }; Returns: number }
       is_allowed_email: { Args: { p_email: string }; Returns: boolean }
+      locations_availability: {
+        Args: {
+          p_end: string
+          p_exclude_schedule_id?: number
+          p_period_id: number
+          p_start: string
+          p_week_day: number
+        }
+        Returns: {
+          booked_class: string
+          booked_schedule_id: number
+          location_id: number
+          location_name: string
+        }[]
+      }
       session_attendance_summary: {
         Args: { p_session_id: number }
         Returns: {
