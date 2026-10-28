@@ -361,6 +361,15 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - **Booking clashes:** the picker shows Free / Booked: <class> before saving; the database exclusion constraints still decide. A clash shows "Location already booked" or "Lecturer already booked", marks the fields ("Booked at this time" / "Overlaps"), names the clashing schedule and links to it.
 - **Deviations / not done:** Equipment is split into Beacons and NFC tags in the Admin menu. Session reschedule changes time and room only (not the date, because of the unique schedule and date). A rescheduled room is not checked for clashes. Not yet tried in a browser by me: the pane could not sign in (email limit), so create/edit flows are covered by tests and database checks only. The "week of demo data" seed from the plan already exists (55 sessions).
 
+### Phase 6 corrections after hands-on testing (2026-10-28)
+
+- **Forms scroll up to the error.** `Screen` now exposes `useScrollUpOn(value)`; the form, the details screen and the QR/token panels scroll to the top when their error box appears. Field mistakes (required, format, dates) now also raise the same box at the top ("Check the details", naming the fields), so the scroll has something to show; the fields keep their inline markers.
+- **Location names ignore case and surrounding spaces** (migration 8: unique index on `lower(btrim(name))`, replacing the case-sensitive constraint). "Open existing" matches case-insensitively too. Other names (role, class, period, permission, frequency) are still case-sensitive; say if they should follow.
+- **Schedules:** start and end time are 24 hour pickers (hour 00 to 23, minute every 5 minutes; a stored off-step minute is kept), not the browser time input, whose 12/24 hour display depends on the computer's language. The list filters by Period, Class and Day (dropdowns, all start on "All"). Sessions is a collapsible, closed by default.
+- **Periods:** start and finish dates use a calendar picker (the finish date opens on the start date's month). The finish must be after the start, checked before saving.
+- New shared UI: `Dropdown`, `Collapsible`, `DateField`, `TimeField` and `src/lib/dates.ts` (calendar maths on plain numbers, so no time zone can shift a date). All list filters are now dropdowns.
+- Checked in the browser as the seeded admin (code sign-in): calendar, scroll-up with the error box, hour list 00 to 23 with :00 auto-filled, Period filter, closed-by-default Sessions, duplicate "room 1.01" rejected and "Open existing" finding Room 1.01. Not checked in a browser: minute list, the booking-clash flow, and a real save of each form after the change.
+
 ---
 
 ## Phase 7: Schedules and class views for every role
