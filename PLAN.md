@@ -304,6 +304,15 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - Per-entity copy-pasted screens (use the kit).
 - Showing raw Postgres messages.
 
+### Phase 5 implementation notes (2026-10-28)
+
+- **Data-driven kit, no per-entity screens:** `src/features/admin/entities.ts` defines Periods, Classes, Frequencies, Email formats, Permissions, Roles and Users; four generic routes under `admin/[entity]` (list, new, details/edit/delete) render them. Adding an entity is one entry. Roles add the permission checklist (`permission-groups.ts`) and Users add the overrides editor as special field types.
+- **CRUD error component** (`crud-error.tsx`) with the lookup tables in `src/lib/db-errors.ts` (code table plus a constraint-name table that marks form fields). Raw errors go to `console.warn` only.
+- **Deviations from the plan:** details open as full screens on every screen size (no desktop side panel yet; layout pass later). Users have no Delete: the database grants clients no DELETE on `users` and each user is tied to a sign-in account. Frequencies are gated by `classes.manage` and Permissions by `roles.manage`, matching the RLS policies from Phase 3.
+- **Users:** editing changes first name, last name, role and overrides only (ID, email and email format are fixed at creation; the column grant allows just those three). **Creating a user needs the `admin-create-user` Edge Function deployed, which has not been done.** The function now answers with `{ error, code, message }` so the app shows the standard "already exists" message.
+- **Not verified in a browser:** the Supabase email limit (2 per hour) blocked a sign-in during development, and the database connector refused the SQL error probes. Verified: typecheck, lint, 30 Jest tests (error mapping, checklist select-all, form validation), static export builds the routes. Still to check by hand with the admin account: create/edit/delete each entity, duplicate role message, period-in-use message, lecturer redirected from `/admin`.
+- Dev-only: the Expo router typegen lists `supabase/functions/.../index` as a route in `.expo/types`; it is not bundled.
+
 ---
 
 ## Phase 6: Admin CRUD part 2 (rooms, devices, timetable, enrolment)
