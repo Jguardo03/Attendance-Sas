@@ -11,6 +11,8 @@ import type { EntityDef } from '../entities';
 import { initialValues } from '../form';
 import { CrudError } from './crud-error';
 import { EntityForm } from './entity-form';
+import { LocationExtras, TagExtras } from './location-extras';
+import { ScheduleExtras } from './schedule-extras';
 import { adminHref } from '../routes';
 
 // Everything about one row, with Edit and Delete (with confirm). Roles and users also list their
@@ -64,7 +66,9 @@ export function EntityDetails({ entity, id }: { entity: EntityDef; id: string })
     );
   }
 
-  const shown = entity.fields.filter((field) => !field.optionsFrom && field.type !== 'permissions' && field.type !== 'overrides');
+  const shown = entity.detailsFromReadOnly
+    ? []
+    : entity.fields.filter((field) => !field.optionsFrom && field.type !== 'permissions' && field.type !== 'overrides');
   const rolePermissions = (relations.data?.permission_ids as number[] | undefined) ?? [];
   const overrides = Object.entries((relations.data?.overrides as Record<string, string> | undefined) ?? {});
 
@@ -106,6 +110,10 @@ export function EntityDetails({ entity, id }: { entity: EntityDef; id: string })
         </Card>
       ) : null}
 
+      {entity.key === 'locations' ? <LocationExtras id={id} qrEnabled={Boolean(data.qr_enabled)} /> : null}
+      {entity.key === 'nfc-tags' ? <TagExtras uid={id} /> : null}
+      {entity.key === 'schedules' ? <ScheduleExtras id={id} schedule={data} /> : null}
+
       <Button label={`Edit ${entity.singular}`} onPress={() => setEditing(true)} />
 
       {entity.canDelete === false ? null : confirming ? (
@@ -113,7 +121,9 @@ export function EntityDetails({ entity, id }: { entity: EntityDef; id: string })
           <Text variant="muted">
             {entity.key === 'permissions'
               ? 'Deleting a permission also removes it from every role and from any user override.'
-              : 'This cannot be undone.'}
+              : entity.key === 'locations'
+                ? 'Beacons and NFC tags here become unassigned. This cannot be undone.'
+                : 'This cannot be undone.'}
           </Text>
           <Button variant="danger" label={remove.isPending ? 'Deleting...' : 'Delete'} disabled={remove.isPending} onPress={() => remove.mutate()} />
           <Button variant="secondary" label="Cancel" onPress={() => setConfirming(false)} />

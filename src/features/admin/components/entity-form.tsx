@@ -3,16 +3,23 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Button, Select, TextField } from '@/components/ui';
+import { Button, Card, Select, Text, TextField } from '@/components/ui';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
-import { findExisting, listOptions, listPermissions, saveEntity } from '../api';
+import { findBooking, findExisting, listOptions, listPermissions, saveEntity } from '../api';
 import type { EntityDef, FieldDef } from '../entities';
 import { validateValues, type FormValues } from '../form';
+import { adminHref } from '../routes';
 import { CrudError } from './crud-error';
+import { LocationPicker } from './location-picker';
 import { OverridesEditor } from './overrides-editor';
 import { PermissionChecklist } from './permission-checklist';
-import { adminHref } from '../routes';
+
+type Option = { value: string; label: string };
+
+function optionsKey(field: FieldDef) {
+  return ['admin', 'options', field.optionsFrom?.table, field.optionsFrom?.like?.pattern ?? ''];
+}
 
 function OptionSelect({
   field,
@@ -26,19 +33,15 @@ function OptionSelect({
   onChange: (value: string) => void;
 }) {
   const loaded = useQuery({
-    queryKey: ['admin', 'options', field.optionsFrom?.table],
+    queryKey: optionsKey(field),
     enabled: Boolean(field.optionsFrom),
     queryFn: () => listOptions(field.optionsFrom!),
   });
-  return (
-    <Select
-      label={field.label}
-      value={value}
-      options={field.options ?? loaded.data ?? []}
-      onChange={onChange}
-      error={error}
-    />
-  );
+  const options: Option[] = [
+    ...(field.allowEmpty ? [{ value: '', label: field.allowEmpty }] : []),
+    ...(field.options ?? loaded.data ?? []),
+  ];
+  return <Select label={field.required ? `${field.label} *` : field.label} value={value} options={options} onChange={onChange} error={error} />;
 }
 
 // Create and edit form for any entity. Keeps what was typed when a save fails.
@@ -61,6 +64,8 @@ export function EntityForm({
   const [values, setValues] = useState<FormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<FriendlyError | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
 
   const needsPermissions = entity.fields.some((field) => field.type === 'permissions' || field.type === 'overrides');
   const permissions = useQuery({
@@ -69,13 +74,14 @@ export function EntityForm({
     queryFn: listPermissions,
   });
   const emailFormats = useQuery({
-    queryKey: ['admin', 'options', 'email_parm'],
+    queryKey: ['admin', 'options', 'email_parm', ''],
     enabled: entity.key === 'users',
     queryFn: () => listOptions({ table: 'email_parm', value: 'id', label: 'format', order: 'format' }),
   });
 
   function setValue(name: string, value: unknown) {
     setValues((current) => ({ ...current, [name]: value }));
+    setConfirmMessage(null);
     // Editing a marked field clears its marker.
     setErrors((current) => {
       if (!current[name]) return current;
@@ -87,25 +93,57 @@ export function EntityForm({
   const save = useMutation({
     mutationFn: () => saveEntity(entity, values, id),
     onSuccess: async (savedId) => {
-      await queryClient.invalidateQueries({ queryKey: ['admin', entity.key] });
+      await queryClient.invalidateQueries({ queryKey: ['admin'] });
       onSaved(savedId);
     },
-    onError: (error) => {
+    onError: async (error) => {
       const friendly = mapDbError(error as { code?: string; message?: string }, { item: entity.singular, values });
-      setFailure(friendly);
+      const booking = friendly.action === 'view-booking';
       setErrors((current) => ({
         ...current,
-        ...Object.fromEntries(friendly.fields.map((field) => [field, friendly.message])),
+        // A booking clash marks the room or lecturer and the time fields, as in the wireframe.
+        ...Object.fromEntries(
+          friendly.fields.map((field, index) => [field, booking ? (index === 0 ? 'Booked at this time' : 'Overlaps') : friendly.message]),
+        ),
       }));
+      setFailure(friendly);
+      if (booking && entity.key === 'schedules') {
+        const found = await findBooking(values, friendly.constraint, id);
+        if (found) {
+          setBookingId(found.id);
+          setFailure({ ...friendly, conflict: found.label });
+        }
+      }
     },
   });
 
-  function submit() {
+  // Label of the option currently chosen for a field, read from the options the form already loaded.
+  function labelFor(field: FieldDef, value: string): string {
+    if (!value) return field.allowEmpty ?? 'none';
+    const options = queryClient.getQueryData<Option[]>(optionsKey(field)) ?? [];
+    return options.find((option) => option.value === value)?.label ?? value;
+  }
+
+  function submit(confirmed = false) {
     const emailFormat = emailFormats.data?.find((option) => option.value === String(values.email_parm_id))?.label;
     const found = validateValues(entity, values, creating, { emailFormat });
     setErrors(found);
     setFailure(null);
-    if (Object.keys(found).length === 0) save.mutate();
+    setBookingId(null);
+    if (Object.keys(found).length > 0) return;
+
+    if (!confirmed && !creating) {
+      for (const field of entity.fields) {
+        const from = String(initial[field.name] ?? '');
+        const to = String(values[field.name] ?? '');
+        if (field.confirmChange && from && from !== to) {
+          setConfirmMessage(field.confirmChange(labelFor(field, from), labelFor(field, to)));
+          return;
+        }
+      }
+    }
+    setConfirmMessage(null);
+    save.mutate();
   }
 
   async function onFailureAction() {
@@ -115,6 +153,10 @@ export function EntityForm({
         router.push(adminHref(entity.key, existing));
         return;
       }
+    }
+    if (failure?.action === 'view-booking' && bookingId) {
+      router.push(adminHref(entity.key, bookingId));
+      return;
     }
     setFailure(null);
   }
@@ -145,6 +187,18 @@ export function EntityForm({
             />
           );
         }
+        if (field.type === 'location-picker') {
+          return (
+            <LocationPicker
+              key={field.name}
+              values={values}
+              value={String(values[field.name] ?? '')}
+              excludeScheduleId={id}
+              error={errors[field.name]}
+              onChange={(next) => setValue(field.name, next)}
+            />
+          );
+        }
         if (field.type === 'select') {
           return (
             <OptionSelect
@@ -152,7 +206,7 @@ export function EntityForm({
               field={field}
               value={String(values[field.name] ?? '')}
               error={errors[field.name]}
-              onChange={(value) => setValue(field.name, value)}
+              onChange={(next) => setValue(field.name, next)}
             />
           );
         }
@@ -161,18 +215,26 @@ export function EntityForm({
             key={field.name}
             label={field.required ? `${field.label} *` : field.label}
             value={String(values[field.name] ?? '')}
-            onChangeText={(value) => setValue(field.name, value)}
+            onChangeText={(next) => setValue(field.name, next)}
             placeholder={field.placeholder}
             multiline={field.type === 'textarea'}
-            keyboardType={field.type === 'number' ? 'number-pad' : 'default'}
-            autoCapitalize="none"
+            keyboardType={field.type === 'number' && !field.signed ? 'number-pad' : 'default'}
+            autoCapitalize={field.uppercase ? 'characters' : 'none'}
             autoCorrect={false}
             error={errors[field.name] ?? undefined}
           />
         );
       })}
 
-      <Button label={save.isPending ? 'Saving...' : 'Save'} disabled={save.isPending} onPress={submit} />
+      {confirmMessage ? (
+        <Card title="Confirm the change">
+          <Text>{confirmMessage}</Text>
+          <Button label="Confirm and save" onPress={() => submit(true)} disabled={save.isPending} />
+          <Button variant="secondary" label="Keep editing" onPress={() => setConfirmMessage(null)} />
+        </Card>
+      ) : (
+        <Button label={save.isPending ? 'Saving...' : 'Save'} disabled={save.isPending} onPress={() => submit()} />
+      )}
       <Button variant="secondary" label="Cancel" onPress={onCancel} />
     </View>
   );

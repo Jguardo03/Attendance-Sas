@@ -6,7 +6,7 @@ import { Pressable, View } from 'react-native';
 import { Button, Card, Select, Text, TextField } from '@/components/ui';
 
 import { listRows } from '../api';
-import type { EntityDef } from '../entities';
+import { rowId, type EntityDef } from '../entities';
 import { adminHref } from '../routes';
 
 // Search, filter and "+ Add" over any entity. Rows open the details screen.
@@ -25,7 +25,8 @@ export function EntityList({ entity }: { entity: EntityDef }) {
   const visible = (rows.data ?? []).filter((row) => {
     const matchesFilter = filter === 'all' || !entity.filter || entity.filter.value(row) === filter;
     const needle = search.trim().toLowerCase();
-    const matchesSearch = !needle || entity.searchColumns.some((column) => String(row[column] ?? '').toLowerCase().includes(needle));
+    const haystack = entity.searchText ? entity.searchText(row) : entity.searchColumns.map((column) => String(row[column] ?? '')).join(' ');
+    const matchesSearch = !needle || haystack.toLowerCase().includes(needle);
     return matchesFilter && matchesSearch;
   });
 
@@ -45,9 +46,9 @@ export function EntityList({ entity }: { entity: EntityDef }) {
 
       {visible.map((row) => (
         <Pressable
-          key={String(row.id)}
+          key={rowId(entity, row)}
           accessibilityRole="link"
-          onPress={() => router.push(adminHref(entity.key, row.id))}>
+          onPress={() => router.push(adminHref(entity.key, rowId(entity, row)))}>
           <Card>
             <Text variant="heading">{entity.title(row)}</Text>
             {entity.columns.map((column) => (

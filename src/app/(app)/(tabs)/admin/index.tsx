@@ -22,8 +22,8 @@ export default function AdminHome() {
             </Card>
           </Pressable>
         ))}
-      <Card title="Coming in Phase 6">
-        <Text variant="muted">Locations, equipment, schedules, sessions and enrolments.</Text>
+      <Card title="Coming later">
+        <Text variant="muted">Attendance reports and the Today dashboard.</Text>
       </Card>
     </Screen>
   );
