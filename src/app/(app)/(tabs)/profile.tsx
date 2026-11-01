@@ -44,7 +44,7 @@ export default function ProfileScreen() {
 
       {confirming ? (
         <Card title="Sign out?">
-          <Text variant="muted">You will need a new sign-in link to get back in.</Text>
+          <Text variant="muted">You will need a new sign-in code to get back in.</Text>
           <Button variant="danger" label="Sign out" onPress={signOut} />
           <Button variant="secondary" label="Cancel" onPress={() => setConfirming(false)} />
         </Card>
