@@ -2,7 +2,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { Badge, Button, Card, Screen, Text } from '@/components/ui';
+import { TeachingSessionPanel } from '@/features/teaching/teaching-session-panel';
 import { useAuth } from '@/providers/auth';
+
+import { audienceOf } from './audience';
 
 import {
   attendanceLabel,
@@ -25,9 +28,10 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
   const { can, claims } = useAuth();
   const [showAll, setShowAll] = useState(false);
   const session = useSession(sessionId);
-  const isStudent = can('attendance.check_in');
+  // Students get check in and their own attendance; lecturers and admins get the whole class's attendance.
+  const isStudent = audienceOf(can) === 'student';
   const mine = useMyAttendance(isStudent ? claims?.appUserId : null, [sessionId]);
-  const attendees = useAttendees(sessionId);
+  const attendees = useAttendees(sessionId, isStudent);
 
   const back = <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
 
@@ -78,17 +82,21 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
         </>
       ) : null}
 
-      <Card title={`Session attendees (${people.length})`}>
-        {attendees.isPending ? <Text variant="muted">Loading...</Text> : null}
-        {visible.map((person, index) => (
-          <Text key={`${person.last_name}-${person.first_name}-${index}`}>
-            {person.first_name} {person.last_name}
-          </Text>
-        ))}
-        {people.length > PREVIEW ? (
-          <Button variant="secondary" label={showAll ? 'Show fewer' : 'Show all'} onPress={() => setShowAll((value) => !value)} />
-        ) : null}
-      </Card>
+      {isStudent ? (
+        <Card title={`Session attendees (${people.length})`}>
+          {attendees.isPending ? <Text variant="muted">Loading...</Text> : null}
+          {visible.map((person, index) => (
+            <Text key={`${person.last_name}-${person.first_name}-${index}`}>
+              {person.first_name} {person.last_name}
+            </Text>
+          ))}
+          {people.length > PREVIEW ? (
+            <Button variant="secondary" label={showAll ? 'Show fewer' : 'Show all'} onPress={() => setShowAll((value) => !value)} />
+          ) : null}
+        </Card>
+      ) : (
+        <TeachingSessionPanel session={data} />
+      )}
     </Screen>
   );
 }

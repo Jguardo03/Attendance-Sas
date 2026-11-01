@@ -1,16 +1,21 @@
 import { Card, Screen, Text } from '@/components/ui';
+import { audienceOf } from '@/features/sessions/audience';
 import { StudentClasses } from '@/features/student/classes';
+import { AdminClasses } from '@/features/teaching/admin-classes';
+import { LecturerClasses } from '@/features/teaching/lecturer-classes';
 import { useAuth } from '@/providers/auth';
 
 export default function ClassesScreen() {
   const { can } = useAuth();
-  // Chosen by permission, not by role name. Lecturer and admin versions arrive in the next step of Phase 7.
-  if (can('attendance.check_in')) return <StudentClasses />;
+  const audience = audienceOf(can);
+  if (audience === 'admin') return <AdminClasses />;
+  if (audience === 'lecturer') return <LecturerClasses />;
+  if (audience === 'student') return <StudentClasses />;
 
   return (
     <Screen title="Classes">
-      <Card title="Classes">
-        <Text variant="muted">Built next for lecturers and admins.</Text>
+      <Card>
+        <Text variant="muted">Your account has no classes.</Text>
       </Card>
     </Screen>
   );
