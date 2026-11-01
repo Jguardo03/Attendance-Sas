@@ -66,7 +66,8 @@ export function useSessions(
   live = false,
 ) {
   return useQuery({
-    queryKey: ['sessions', ...key],
+    // The 'list' prefix keeps these arrays apart from single-row queries such as useSchedule and useSession.
+    queryKey: ['sessions', 'list', ...key],
     enabled,
     // Screens that show "Live" or "Check in opens at" refresh each minute so the state stays right.
     refetchInterval: live ? MINUTE : false,
