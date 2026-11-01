@@ -64,8 +64,8 @@ export function ClassDetails({ scheduleId }: { scheduleId: number }) {
     <Button variant="secondary" label="Back to Classes" onPress={() => (router.canGoBack() ? router.back() : router.replace('/classes'))} />
   );
 
-  if (schedule.isPending) return <Screen title="Class details">{back}<Text variant="muted">Loading...</Text></Screen>;
-  if (!schedule.data) return <Screen title="Class details">{back}<Text variant="error">This class was not found.</Text></Screen>;
+  if (schedule.isPending) return <Screen standalone title="Class details">{back}<Text variant="muted">Loading...</Text></Screen>;
+  if (!schedule.data) return <Screen standalone title="Class details">{back}<Text variant="error">This class was not found.</Text></Screen>;
 
   const info = schedule.data;
   const mine = numbers.data?.get(scheduleId);
@@ -76,7 +76,7 @@ export function ClassDetails({ scheduleId }: { scheduleId: number }) {
   const shown = tab === 'upcoming' ? upcoming : previous;
 
   return (
-    <Screen title={info.class_name}>
+    <Screen standalone title={info.class_name}>
       {back}
       <Card>
         <Text variant="muted">

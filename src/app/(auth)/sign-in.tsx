@@ -65,7 +65,7 @@ export default function SignInScreen() {
 
   if (sent) {
     return (
-      <Screen title="Check your email">
+      <Screen standalone title="Check your email">
         <Card>
           <Text>If this address can sign in, we sent a code to it. Enter the code below.</Text>
           <Text variant="muted">The code works once and expires soon.</Text>
@@ -110,7 +110,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen title="Sign in">
+    <Screen standalone title="Sign in">
       <Card>
         <Text variant="muted">Enter your institutional email. We will send you a sign-in code.</Text>
         <TextField

@@ -40,7 +40,7 @@ export default function AuthCallbackScreen() {
   }
 
   return (
-    <Screen title={error ? 'Sign-in link problem' : 'Signing you in'}>
+    <Screen standalone title={error ? 'Sign-in link problem' : 'Signing you in'}>
       {error ? (
         <>
           <Card>

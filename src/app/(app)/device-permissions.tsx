@@ -7,7 +7,7 @@ export default function DevicePermissionsScreen() {
   const { markSeen } = useDevicePermissionsPrompt();
 
   return (
-    <Screen title="Allow check-in on this device">
+    <Screen standalone title="Allow check-in on this device">
       <Card title="Bluetooth">
         <Text variant="muted">Detects the classroom beacon so you can check in when you are in the room.</Text>
       </Card>

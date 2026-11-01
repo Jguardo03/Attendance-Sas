@@ -31,8 +31,8 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
 
   const back = <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
 
-  if (session.isPending) return <Screen title="Session details">{back}<Text variant="muted">Loading...</Text></Screen>;
-  if (!session.data) return <Screen title="Session details">{back}<Text variant="error">This session was not found.</Text></Screen>;
+  if (session.isPending) return <Screen standalone title="Session details">{back}<Text variant="muted">Loading...</Text></Screen>;
+  if (!session.data) return <Screen standalone title="Session details">{back}<Text variant="error">This session was not found.</Text></Screen>;
 
   const data = session.data;
   const attendance = mine.data?.get(sessionId) ?? null;
@@ -42,7 +42,7 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
   const visible = showAll ? people : people.slice(0, PREVIEW);
 
   return (
-    <Screen title={data.class_name}>
+    <Screen standalone title={data.class_name}>
       {back}
       <Badge label={badge.label} tone={badge.tone} />
 

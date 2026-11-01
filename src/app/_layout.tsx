@@ -13,7 +13,7 @@ function RootNavigator() {
   // Wait for the stored session to load so a signed-in person never sees the sign-in screen flash.
   if (status === 'loading') {
     return (
-      <Screen title="Attendance SAS">
+      <Screen standalone title="Attendance SAS">
         <Text variant="muted">Loading...</Text>
       </Screen>
     );
