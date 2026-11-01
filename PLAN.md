@@ -412,6 +412,13 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - **Dev script:** `supabase/dev/live-session.sql` makes one of S1000001's classes live now and another open soon (with a reset block). It has not been run; the seeded Monday 09:00 class happened to be live during testing.
 - **Not done yet (step 7b):** lecturer Home and Classes ("N below 75%"), admin Today dashboard and filters, calendar session counts for admins. Not tested: iOS (needs an Apple Developer account), and Android was not tried for these screens.
 
+### Android emulator check (2026-11-02)
+
+- Tested in Expo Go 58.0.5 on the Pixel 9 Pro API 35 emulator: student Home, Classes, Calendar, Session details and Profile; code sign-in as the admin (typing the emailed code); the Add period form with the touch calendar and its error box; the Add schedule form with the 24 hour pickers, including scrolling inside the hour list. All worked.
+- **Fixed:** screen titles were drawn under the Android status bar, and on screens outside the tab bar the last content slid under the gesture bar. `Screen` now pads for the status bar, and `standalone` screens (details, sign-in, device permissions) also pad for the gesture bar. The sign-out text still said "sign-in link"; it now says code. Jest mocks the safe-area library.
+- **Environment note, not an app bug:** on first load Expo Go stalled on the splash because the emulator could not reach the PC over its LAN address (probably the Windows firewall). `adb reverse tcp:<port> tcp:<port>` and opening `exp://localhost:<port>` fixed it.
+- Not tested on Android: Bluetooth, NFC and camera (not built yet), a real device after this change, and iOS.
+
 ---
 
 ## Phase 8: Check-in v1: QR code (end to end) and the check-in orchestrator
