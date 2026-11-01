@@ -150,13 +150,154 @@ export function useStudentOverview(userId: string | null | undefined) {
 }
 
 /** Names only: students cannot read other students' records. */
-export function useAttendees(sessionId: number) {
+export function useAttendees(sessionId: number, enabled = true) {
   return useQuery({
     queryKey: ['sessions', 'attendees', sessionId],
+    enabled,
     queryFn: async () => {
       const { data, error } = await client().rpc('session_attendees', { p_session_id: sessionId });
       if (error) throw error;
       return (data ?? []) as { first_name: string; last_name: string }[];
+    },
+  });
+}
+
+// ---- Lecturer and admin ----------------------------------------------------------------------------------------
+
+export type ClassSummary = {
+  enrolled: number;
+  finished_sessions: number;
+  class_average_pct: number | null;
+  students_below_75: number;
+};
+
+/** One summary per class, keyed by schedule id (a lecturer has a handful of classes, so one call each). */
+export function useClassSummaries(scheduleIds: number[]) {
+  const ids = [...scheduleIds].sort((a, b) => a - b);
+  return useQuery({
+    queryKey: ['sessions', 'class-summaries', ids],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const rows = await Promise.all(
+        ids.map(async (id) => {
+          const { data, error } = await client().rpc('class_attendance_summary', { p_schedule_id: id });
+          if (error) throw error;
+          return [id, ((data ?? [])[0] ?? { enrolled: 0, finished_sessions: 0, class_average_pct: null, students_below_75: 0 }) as ClassSummary] as const;
+        }),
+      );
+      return new Map(rows);
+    },
+  });
+}
+
+/** Sessions held out of sessions planned, per class. Cancelled sessions are not planned sessions. */
+export function useSessionTotals(scheduleIds: number[]) {
+  const ids = [...scheduleIds].sort((a, b) => a - b);
+  return useQuery({
+    queryKey: ['sessions', 'session-totals', ids],
+    enabled: ids.length > 0,
+    refetchInterval: MINUTE,
+    queryFn: async () => {
+      const { data, error } = await client().from('session_overview').select('schedule_id, status').in('schedule_id', ids);
+      if (error) throw error;
+      const totals = new Map<number, { held: number; total: number }>();
+      for (const row of (data ?? []) as { schedule_id: number; status: string }[]) {
+        const current = totals.get(row.schedule_id) ?? { held: 0, total: 0 };
+        if (row.status !== 'cancelled') current.total += 1;
+        if (row.status === 'finished') current.held += 1;
+        totals.set(row.schedule_id, current);
+      }
+      return totals;
+    },
+  });
+}
+
+export type SessionCountsRow = { session_id: number; enrolled: number; present: number; late: number };
+
+/** Enrolled / present / late for every session in a date range, keyed by session id. */
+export function useAttendanceCounts(from: string, to: string, enabled = true) {
+  return useQuery({
+    queryKey: ['sessions', 'attendance-counts', from, to],
+    enabled: enabled && Boolean(from) && Boolean(to),
+    refetchInterval: MINUTE,
+    queryFn: async () => {
+      const { data, error } = await client().rpc('session_attendance_counts', { p_from: from, p_to: to });
+      if (error) throw error;
+      return new Map(((data ?? []) as unknown as SessionCountsRow[]).map((row) => [row.session_id, row]));
+    },
+  });
+}
+
+export type ClassStudent = {
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  finished_sessions: number;
+  present: number;
+  late: number;
+  absent: number;
+  attendance_pct: number | null;
+};
+
+export function useClassStudents(scheduleId: number) {
+  return useQuery({
+    queryKey: ['sessions', 'class-students', scheduleId],
+    queryFn: async () => {
+      const { data, error } = await client().rpc('class_student_attendance', { p_schedule_id: scheduleId });
+      if (error) throw error;
+      return (data ?? []) as unknown as ClassStudent[];
+    },
+  });
+}
+
+export type AttendanceListRow = {
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  status: 'present' | 'late' | 'absent' | null;
+  checked_in_at: string | null;
+  check_in_method: 'beacon' | 'nfc' | 'qr' | 'manual' | null;
+};
+
+/** Every enrolled student with their attendance row for one session. */
+export function useAttendanceList(sessionId: number, enabled = true) {
+  return useQuery({
+    queryKey: ['sessions', 'attendance-list', sessionId],
+    enabled,
+    refetchInterval: MINUTE,
+    queryFn: async () => {
+      const { data, error } = await client().rpc('session_attendance_list', { p_session_id: sessionId });
+      if (error) throw error;
+      return (data ?? []) as unknown as AttendanceListRow[];
+    },
+  });
+}
+
+/** Sessions per day for the admin calendar strip. */
+export function useDayCounts(from: string, to: string) {
+  return useQuery({
+    queryKey: ['sessions', 'day-counts', from, to],
+    enabled: Boolean(from) && Boolean(to),
+    refetchInterval: MINUTE,
+    queryFn: async () => {
+      const { data, error } = await client().rpc('session_day_counts', { p_from: from, p_to: to });
+      if (error) throw error;
+      return new Map(((data ?? []) as unknown as { session_date: string; sessions: number; cancelled: number }[]).map((row) => [row.session_date, row]));
+    },
+  });
+}
+
+export type TodayCounts = { sessions_today: number; live_now: number; upcoming: number; finished: number; rescheduled_or_cancelled: number };
+
+/** The dashboard's five numbers, worked out in the database (the same query the tests compare with raw counts). */
+export function useAdminTodayCounts() {
+  return useQuery({
+    queryKey: ['sessions', 'admin-today-counts'],
+    refetchInterval: MINUTE,
+    queryFn: async () => {
+      const { data, error } = await client().rpc('admin_today_counts');
+      if (error) throw error;
+      return ((data ?? [])[0] ?? { sessions_today: 0, live_now: 0, upcoming: 0, finished: 0, rescheduled_or_cancelled: 0 }) as unknown as TodayCounts;
     },
   });
 }
