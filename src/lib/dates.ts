@@ -68,3 +68,32 @@ export function splitTime(value: string): { hour: string; minute: string } {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
   return match ? { hour: match[1], minute: match[2] } : { hour: '', minute: '' };
 }
+
+const dayMs = 86_400_000;
+
+export function addDays(iso: string, days: number): string {
+  const parsed = parseIso(iso);
+  if (!parsed) return iso;
+  const next = new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d) + days * dayMs);
+  return toIso({ y: next.getUTCFullYear(), m: next.getUTCMonth() + 1, d: next.getUTCDate() });
+}
+
+/** The Monday of the week that holds `iso` (weeks run Monday to Sunday, like the ISO weekdays in schedules). */
+export function startOfWeek(iso: string): string {
+  const parsed = parseIso(iso);
+  if (!parsed) return iso;
+  return addDays(iso, -weekdayIndex(parsed.y, parsed.m, parsed.d));
+}
+
+/** "Tue 27 Oct" */
+export function formatDayShort(iso: string): string {
+  const parsed = parseIso(iso);
+  if (!parsed) return iso;
+  return `${weekdayInitials[weekdayIndex(parsed.y, parsed.m, parsed.d)]} ${parsed.d} ${monthNames[parsed.m - 1].slice(0, 3)}`;
+}
+
+/** "Fri 23 Oct 2026" */
+export function formatDayLong(iso: string): string {
+  const parsed = parseIso(iso);
+  return parsed ? `${formatDayShort(iso)} ${parsed.y}` : iso;
+}
