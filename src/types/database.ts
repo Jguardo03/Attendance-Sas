@@ -876,6 +876,19 @@ export type Database = {
           students_below_75: number
         }[]
       }
+      class_student_attendance: {
+        Args: { p_schedule_id: number }
+        Returns: {
+          absent: number
+          attendance_pct: number
+          finished_sessions: number
+          first_name: string
+          last_name: string
+          late: number
+          present: number
+          student_id: string
+        }[]
+      }
       generate_sessions: { Args: { p_schedule_id: number }; Returns: number }
       is_allowed_email: { Args: { p_email: string }; Returns: boolean }
       locations_availability: {
@@ -901,6 +914,21 @@ export type Database = {
           enrolled: number
           late: number
           present: number
+        }[]
+      }
+      session_attendance_counts: {
+        Args: { p_from: string; p_to: string }
+        Returns: { enrolled: number; late: number; present: number; session_id: number }[]
+      }
+      session_attendance_list: {
+        Args: { p_session_id: number }
+        Returns: {
+          check_in_method: string
+          checked_in_at: string
+          first_name: string
+          last_name: string
+          status: string
+          student_id: string
         }[]
       }
       session_attendees: {

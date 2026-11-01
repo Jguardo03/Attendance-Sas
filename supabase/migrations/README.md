@@ -17,6 +17,7 @@ original version numbers. To rebuild a fresh project, apply them in filename ord
 | 8 | `location_name_case_insensitive` | Replaces the case-sensitive unique name on `location` with a unique index on `lower(btrim(name))`, so "Room 1" and "room 1 " are the same room. |
 | 9 | `names_case_insensitive` | Same case-insensitive, space-trimmed uniqueness for the names of roles, permissions, classes, periods and frequencies (unique indexes on `lower(btrim(name))` replace the old constraints). |
 | 10 | `phase7_session_overview_and_attendance_numbers` | `app_now()` (Melbourne time); views `session_overview` (one row per session, overrides applied, status worked out from the clock) and `schedule_overview`; attendance functions now count a session as finished by the clock and skip cancelled ones; `student_attendance_overview`, `session_attendees` (names only), `admin_today_counts`, `session_day_counts`. Checked by `supabase/tests/phase7_overview.sql`. |
+| 11 | `phase7_teaching_attendance_functions` | `class_student_attendance` (each enrolled student's numbers in a class), `session_attendance_list` (every enrolled student with their row for one session), `session_attendance_counts` (enrolled / present / late per session over a date range). Checked by `supabase/tests/phase7_teaching.sql`. |
 
 Design notes
 - Authorization data is in the JWT: the custom access token hook adds `app_user_id`, `app_role` and `permissions[]`.
