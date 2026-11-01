@@ -800,9 +800,73 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      schedule_overview: {
+        Row: {
+          academic_period_id: number | null
+          class_description: string | null
+          class_id: number | null
+          class_name: string | null
+          frequency_name: string | null
+          lecturer_email: string | null
+          lecturer_first_name: string | null
+          lecturer_id: string | null
+          lecturer_last_name: string | null
+          location_id: number | null
+          location_name: string | null
+          period_finish: string | null
+          period_name: string | null
+          period_start: string | null
+          period_status: Database["public"]["Enums"]["academic_period_status"] | null
+          schedule_id: number | null
+          start_time: string | null
+          end_time: string | null
+          week_day: number | null
+        }
+        Relationships: []
+      }
+      session_overview: {
+        Row: {
+          academic_period_id: number | null
+          check_in_opens_at: string | null
+          class_description: string | null
+          class_id: number | null
+          class_name: string | null
+          end_time: string | null
+          ends_at: string | null
+          frequency_name: string | null
+          lecturer_email: string | null
+          lecturer_first_name: string | null
+          lecturer_id: string | null
+          lecturer_last_name: string | null
+          location_id: number | null
+          location_name: string | null
+          now_local: string | null
+          period_name: string | null
+          period_status: Database["public"]["Enums"]["academic_period_status"] | null
+          schedule_id: number | null
+          session_date: string | null
+          session_id: number | null
+          start_time: string | null
+          starts_at: string | null
+          status: string | null
+          stored_status: Database["public"]["Enums"]["session_status"] | null
+          week_day: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_today_counts: {
+        Args: never
+        Returns: {
+          finished: number
+          live_now: number
+          rescheduled_or_cancelled: number
+          sessions_today: number
+          upcoming: number
+        }[]
+      }
+      app_now: { Args: never; Returns: string }
       class_attendance_summary: {
         Args: { p_schedule_id: number }
         Returns: {
@@ -837,6 +901,25 @@ export type Database = {
           enrolled: number
           late: number
           present: number
+        }[]
+      }
+      session_attendees: {
+        Args: { p_session_id: number }
+        Returns: { first_name: string; last_name: string }[]
+      }
+      session_day_counts: {
+        Args: { p_from: string; p_to: string }
+        Returns: { cancelled: number; session_date: string; sessions: number }[]
+      }
+      student_attendance_overview: {
+        Args: { p_student_id: string }
+        Returns: {
+          absent: number
+          attendance_pct: number
+          finished_sessions: number
+          late: number
+          present: number
+          schedule_id: number
         }[]
       }
       student_class_attendance: {

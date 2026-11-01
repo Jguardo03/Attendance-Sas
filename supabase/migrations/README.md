@@ -16,6 +16,7 @@ original version numbers. To rebuild a fresh project, apply them in filename ord
 | 7 | `phase6_qr_flag_availability_and_session_generation` | Generated `location.qr_enabled` flag (readable, shows QR on/off without exposing the seed); `locations_availability()` (free/booked rooms for a slot, mirrors the overlap constraint); `generate_sessions()` (creates a schedule's sessions from the period dates and frequency). Checked by `supabase/tests/phase6_sessions_and_availability.sql`. |
 | 8 | `location_name_case_insensitive` | Replaces the case-sensitive unique name on `location` with a unique index on `lower(btrim(name))`, so "Room 1" and "room 1 " are the same room. |
 | 9 | `names_case_insensitive` | Same case-insensitive, space-trimmed uniqueness for the names of roles, permissions, classes, periods and frequencies (unique indexes on `lower(btrim(name))` replace the old constraints). |
+| 10 | `phase7_session_overview_and_attendance_numbers` | `app_now()` (Melbourne time); views `session_overview` (one row per session, overrides applied, status worked out from the clock) and `schedule_overview`; attendance functions now count a session as finished by the clock and skip cancelled ones; `student_attendance_overview`, `session_attendees` (names only), `admin_today_counts`, `session_day_counts`. Checked by `supabase/tests/phase7_overview.sql`. |
 
 Design notes
 - Authorization data is in the JWT: the custom access token hook adds `app_user_id`, `app_role` and `permissions[]`.
