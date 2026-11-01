@@ -10,6 +10,8 @@ export default function AppLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!pending} redirectTo="/device-permissions">
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="session/[id]" />
+        <Stack.Screen name="class/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={pending} redirectTo="/">
         <Stack.Screen name="device-permissions" />
