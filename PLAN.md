@@ -412,6 +412,15 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - **Dev script:** `supabase/dev/live-session.sql` makes one of S1000001's classes live now and another open soon (with a reset block). It has not been run; the seeded Monday 09:00 class happened to be live during testing.
 - **Not done yet (step 7b):** lecturer Home and Classes ("N below 75%"), admin Today dashboard and filters, calendar session counts for admins. Not tested: iOS (needs an Apple Developer account), and Android was not tried for these screens.
 
+### Phase 7 implementation notes, step 7b: lecturer and admin screens (2026-11-02)
+
+- **Screens by permission** (`audienceOf`: admin.access, then sessions.manage_own, then attendance.check_in): Home, Classes, Calendar, Class details and Session details each switch on it. Lecturer: Home (today with live "18/24 . 75%" and Open live attendance / View session / View attendance), Classes (enrolled, "4 of 11 sessions held", "N students below 75%"; previous classes), class details with each student's percentage (search, sort), read-only session view with the counts and every student's status. Admin: Today (five counts from `admin_today_counts`, filters, each session once), Calendar (week strip with sessions per day, tap a day), Classes (active period by default; period, class and lecturer filters; average and below 75%), class details with a Manage enrolment button.
+- **Database (migration 11):** `class_student_attendance`, `session_attendance_list`, `session_attendance_counts` (security invoker). Checked live as admin, the owning lecturer, another lecturer and a student (`supabase/tests/phase7_teaching.sql`, 11 checks).
+- **Checked in the browser against live data** as the lecturer (L1000001) and the admin (sg): Home and Classes matched the database (7 enrolled, 4 of 11 held, 4 below 75%; 57.1% average shown as 57%), the Today counts and the Calendar day counts matched raw row counts, and the admin Classes numbers matched. Also viewed on the Android emulator as the admin.
+- **Mobile layout:** the admin Today and Calendar filters (and the admin Classes filters) are a closed "Filters (N)" section so the session list stays on screen.
+- **Not built (by design):** editing or viewing an individual attendance record and "Change attendance" (Phase 9). Rescheduled sessions show their new time and room, not a new date (rescheduling changes time and room only).
+- **Not verified:** a finished session's lecturer view in the browser (the unit tests cover the status logic), a lecturer or admin on a real Android phone, iOS.
+
 ### Android emulator check (2026-11-02)
 
 - Tested in Expo Go 58.0.5 on the Pixel 9 Pro API 35 emulator: student Home, Classes, Calendar, Session details and Profile; code sign-in as the admin (typing the emailed code); the Add period form with the touch calendar and its error box; the Add schedule form with the 24 hour pickers, including scrolling inside the hour list. All worked.
