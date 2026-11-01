@@ -402,6 +402,16 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 
 - Showing a session twice because of a join with enrolled students (the admin wireframe says "Each listed once").
 
+### Phase 7 implementation notes, step 7a: database and student screens (2026-11-02)
+
+- **Session status comes from the clock** (decided with the user): `session_overview` works it out in Melbourne time (cancelled stays cancelled; after the end it is finished; after the start it is live; before that it keeps scheduled or rescheduled). No scheduled job yet; the `pg_cron` job arrives in Phase 8 for no-show rows. The Phase 3 attendance functions now count a session as finished by the clock, and cancelled sessions are left out of every percentage.
+- **Database (migration 10):** `app_now()`, views `session_overview` and `schedule_overview` (security invoker, so row level security still decides what each person sees), `student_attendance_overview`, `session_attendees` (names only; the lookup is a private definer function behind an invoker wrapper), `admin_today_counts`, `session_day_counts`. Checked live per role: a student sees exactly their 44 sessions, each once; a student outside a class sees none of it; the admin counts equal the raw row counts (`supabase/tests/phase7_overview.sql`). The lecturer and admin queries are already in place for step 7b.
+- **Student screens (permission `attendance.check_in`, not role name):** Home (today and upcoming), Classes (Current groups by period; Previous shows final attendance), Class details (my attendance, upcoming and previous sessions), Session details (disabled Check in with the right label: Opens at HH:MM / Check in / Closed / Not available, my attendance, attendee names with Show all). The Calendar (week at a time) is shared by every role. Checked in the browser as S1000001 against live data; the percentages matched the database.
+- **Known data effect:** sessions that finished after the seed was created (the seed's "today" was 27 Oct) have no attendance rows, so they count as absent until Phase 8 adds the no-show job. That is why some classes read 50%.
+- **Bug found and fixed while testing:** two queries shared one cache key and crashed Class details. List queries now live under `sessions/list/...`, and a Jest test (`class-details.test.tsx`) reproduces the crash against the old key.
+- **Dev script:** `supabase/dev/live-session.sql` makes one of S1000001's classes live now and another open soon (with a reset block). It has not been run; the seeded Monday 09:00 class happened to be live during testing.
+- **Not done yet (step 7b):** lecturer Home and Classes ("N below 75%"), admin Today dashboard and filters, calendar session counts for admins. Not tested: iOS (needs an Apple Developer account), and Android was not tried for these screens.
+
 ---
 
 ## Phase 8: Check-in v1: QR code (end to end) and the check-in orchestrator
