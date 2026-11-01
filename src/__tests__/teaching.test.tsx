@@ -199,9 +199,14 @@ describe('AdminToday', () => {
     expect(screen.getAllByText('Introduction to Programming')).toHaveLength(1);
 
     // Filtering by lecturer narrows the list and the heading says how many of the day are shown.
+    // The filters start closed; open them, then pick a lecturer.
+    expect(screen.queryByRole('button', { name: 'Lecturer' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Filters' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Lecturer' }));
     await fireEvent.press(screen.getByRole('menuitem', { name: 'Omar Park' }));
     expect(await screen.findByText('Sessions today (1 of 2)')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Clear filters (1)' })).toBeTruthy();
     expect(screen.queryByText('18/24 · 75%')).toBeNull();
     client.clear();
   });

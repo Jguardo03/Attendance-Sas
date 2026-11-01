@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Button, Card, Dropdown, Screen, Text } from '@/components/ui';
+import { Button, Card, Collapsible, Dropdown, Screen, Text } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useClassSummaries, useSchedules } from '@/features/sessions/queries';
 
@@ -33,9 +33,11 @@ export function AdminClasses() {
 
   return (
     <Screen title="Classes">
-      <Dropdown label="Period" value={period} options={choices(unique(all.map((schedule) => schedule.period_name)))} onChange={(value) => setChosen((c) => ({ ...c, period: value }))} />
-      <Dropdown label="Class" value={chosen.class_name ?? ''} options={choices(unique(all.map((schedule) => schedule.class_name)))} onChange={(value) => setChosen((c) => ({ ...c, class_name: value || undefined }))} />
-      <Dropdown label="Lecturer" value={chosen.lecturer ?? ''} options={choices(unique(all.map(lecturerOf)))} onChange={(value) => setChosen((c) => ({ ...c, lecturer: value || undefined }))} />
+      <Collapsible title={chosen.class_name || chosen.lecturer ? `Filters (${[chosen.class_name, chosen.lecturer].filter(Boolean).length})` : 'Filters'}>
+        <Dropdown label="Period" value={period} options={choices(unique(all.map((schedule) => schedule.period_name)))} onChange={(value) => setChosen((c) => ({ ...c, period: value }))} />
+        <Dropdown label="Class" value={chosen.class_name ?? ''} options={choices(unique(all.map((schedule) => schedule.class_name)))} onChange={(value) => setChosen((c) => ({ ...c, class_name: value || undefined }))} />
+        <Dropdown label="Lecturer" value={chosen.lecturer ?? ''} options={choices(unique(all.map(lecturerOf)))} onChange={(value) => setChosen((c) => ({ ...c, lecturer: value || undefined }))} />
+      </Collapsible>
       {chosen.class_name || chosen.lecturer || chosen.period !== undefined ? <Button variant="secondary" label="Reset filters" onPress={() => setChosen({})} /> : null}
 
       <Text variant="heading">{`${shown.length} class${shown.length === 1 ? '' : 'es'}${period ? ` in ${period}` : ''}`}</Text>
