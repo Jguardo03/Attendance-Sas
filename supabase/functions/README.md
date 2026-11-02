@@ -38,3 +38,22 @@ Request: `POST /functions/v1/nfc-tag`, `{ action: 'create', nfc_uid, location_id
 
 Both were deployed 2026-10-28 (version 1, `verify_jwt` off). The sign-in check and CORS block are repeated in each
 function because each one deploys on its own. Unauthenticated calls return 401.
+
+## check-in
+
+Records a student's check in. Needs `attendance.check_in`. Request: `POST /functions/v1/check-in`,
+`{ sessionId, method: 'qr', evidence: { payload } }`. It checks that the QR code is genuine and for the session's room
+(HMAC with the room secret, current step plus or minus one), then calls the database function `record_check_in`, which
+decides enrolled, open, late and already checked in with the database clock. Replies 201 `{ status, checked_in_at, method,
+session_id }`, or 400, 401, 403, 404, 409, 422 (codes in `docs/check-in-protocol.md`).
+
+## room-qr
+
+Returns the QR code to show in a room now. Admins (`locations.manage`): `{ location_id }` or `{ session_id }`. Lecturers
+(`sessions.manage_own`): `{ session_id }` for a session they teach, while check in is open. Replies
+`{ location_id, location_name, payload, step, expires_in }`.
+
+Both deployed 2026-11-02 (version 2, `verify_jwt` off) and checked end to end with real sign-ins: present, late, already
+checked in, too early, not enrolled, cancelled, unknown session, forged, wrong-room, expired and made-up codes, and the
+admin, lecturer and student permissions. The server key reads `session_overview` and runs `app_now()` only because of
+migrations 13 and 14.
