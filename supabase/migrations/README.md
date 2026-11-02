@@ -18,6 +18,9 @@ original version numbers. To rebuild a fresh project, apply them in filename ord
 | 9 | `names_case_insensitive` | Same case-insensitive, space-trimmed uniqueness for the names of roles, permissions, classes, periods and frequencies (unique indexes on `lower(btrim(name))` replace the old constraints). |
 | 10 | `phase7_session_overview_and_attendance_numbers` | `app_now()` (Melbourne time); views `session_overview` (one row per session, overrides applied, status worked out from the clock) and `schedule_overview`; attendance functions now count a session as finished by the clock and skip cancelled ones; `student_attendance_overview`, `session_attendees` (names only), `admin_today_counts`, `session_day_counts`. Checked by `supabase/tests/phase7_overview.sql`. |
 | 11 | `phase7_teaching_attendance_functions` | `class_student_attendance` (each enrolled student's numbers in a class), `session_attendance_list` (every enrolled student with their row for one session), `session_attendance_counts` (enrolled / present / late per session over a date range). Checked by `supabase/tests/phase7_teaching.sql`. |
+| 12 | `phase8_check_in_and_absent_job` | `pg_cron`; `record_check_in` (all the check-in rules, database clock, callable by the server only); `private.mark_absent_for_finished_sessions` and its every-minute job. Checked by `supabase/tests/phase8_check_in.sql`. |
+| 13 | `phase8_service_role_reads_session_views` | The server role may read `session_overview` and `schedule_overview` (found by the end-to-end check: every check in said session not found). |
+| 14 | `phase8_service_role_runs_app_now` | The server role may run `app_now()`, which the views call. |
 
 Design notes
 - Authorization data is in the JWT: the custom access token hook adds `app_user_id`, `app_role` and `permissions[]`.
