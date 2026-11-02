@@ -421,6 +421,15 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - **Not built (by design):** editing or viewing an individual attendance record and "Change attendance" (Phase 9). Rescheduled sessions show their new time and room, not a new date (rescheduling changes time and room only).
 - **Not verified:** a finished session's lecturer view in the browser (the unit tests cover the status logic), a lecturer or admin on a real Android phone, iOS.
 
+### Phase 8, step 8a: the server half of check-in (2026-11-02)
+
+- **Protocol** in `docs/check-in-protocol.md`: `v1.<locationId>.<step>.<mac>`, 30 second steps, HMAC-SHA256 of the room secret, first 16 hex characters, current step plus or minus one (a code stops working within 60 seconds of appearing, not 90 as first drafted). Reference code and tests in `src/lib/qr-protocol.ts` (known vector checked against Node's own HMAC).
+- **Database (migrations 12 to 14):** `pg_cron` switched on by the migration (no dashboard click); `record_check_in` holds every rule (enrolled, not cancelled, not already in, open from 10 minutes before to the end, present before the start and late from it, database clock, row created by the student) and only the server role can call it; an every-minute job adds absent rows for finished, non-cancelled sessions. `supabase/tests/phase8_check_in.sql`: 18 checks, all pass.
+- **Edge Functions** `check-in` and `room-qr` (deployed). Admins may show any room with QR on; a lecturer may show only the room of a session they teach, while check in is open (decision 1). The end-to-end run used real sign-ins and found a real bug (the server role could not read the new views or run `app_now()`, so every check in said "session not found"); fixed with two grants, and the functions now report a failed lookup as a server error instead of "not found".
+- **Backfill (decision 3):** the job's first run added 40 absent rows. That included the gaps in the demo data (the seed left absent students with no row, back to July) and today's 09:00 class. Percentages did not change.
+- **Test data left behind:** two throwaway sessions today (one present, one late check in for S1000001). Attendance history is append-only by design, so they cannot be deleted; the other throwaway sessions were removed.
+- **Not built yet (8b):** the Room QR display page, the scanner and check-in dialog, the dev-only paste box, the Check in button going live, performance timing.
+
 ### Android emulator check (2026-11-02)
 
 - Tested in Expo Go 58.0.5 on the Pixel 9 Pro API 35 emulator: student Home, Classes, Calendar, Session details and Profile; code sign-in as the admin (typing the emailed code); the Add period form with the touch calendar and its error box; the Add schedule form with the 24 hour pickers, including scrolling inside the hour list. All worked.
