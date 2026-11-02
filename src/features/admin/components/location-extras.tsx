@@ -23,6 +23,7 @@ function Link({ label, detail, href }: { label: string; detail?: string; href: R
 
 // Location details: QR check-in on/off, and what is placed in or scheduled for the room.
 export function LocationExtras({ id, qrEnabled }: { id: string; qrEnabled: boolean }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<FriendlyError | null>(null);
@@ -76,6 +77,7 @@ export function LocationExtras({ id, qrEnabled }: { id: string; qrEnabled: boole
 
       <Card title="QR check-in">
         <Badge label={qrEnabled ? 'QR check-in: On' : 'QR check-in: Off'} tone={qrEnabled ? 'success' : 'neutral'} />
+        {qrEnabled ? <Button label="Show room QR" onPress={() => router.push(`/room-qr?location=${id}`)} /> : null}
         {qrEnabled ? (
           confirming ? (
             <>

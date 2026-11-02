@@ -25,6 +25,7 @@
       "bundler": "metro"
     },
     "plugins": [
+      ["expo-camera", { "cameraPermission": "Allow Attendance SAS to use the camera to read the QR code shown in the room." }],
       "expo-router",
       [
         "expo-splash-screen",

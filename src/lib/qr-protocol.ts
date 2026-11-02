@@ -20,7 +20,7 @@ export function parsePayload(text: string): QrPayload | null {
   return match ? { locationId: Number(match[1]), step: Number(match[2]), mac: match[3] } : null;
 }
 
-/** The current step or the one either side is accepted, so a code lives for about 90 seconds. */
+/** The current step or the one either side is accepted, so a code stops working within 60 seconds of appearing. */
 export function stepAccepted(step: number, nowSeconds: number): boolean {
   return Math.abs(step - stepAt(nowSeconds)) <= 1;
 }

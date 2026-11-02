@@ -428,7 +428,16 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 - **Edge Functions** `check-in` and `room-qr` (deployed). Admins may show any room with QR on; a lecturer may show only the room of a session they teach, while check in is open (decision 1). The end-to-end run used real sign-ins and found a real bug (the server role could not read the new views or run `app_now()`, so every check in said "session not found"); fixed with two grants, and the functions now report a failed lookup as a server error instead of "not found".
 - **Backfill (decision 3):** the job's first run added 40 absent rows. That included the gaps in the demo data (the seed left absent students with no row, back to July) and today's 09:00 class. Percentages did not change.
 - **Test data left behind:** two throwaway sessions today (one present, one late check in for S1000001). Attendance history is append-only by design, so they cannot be deleted; the other throwaway sessions were removed.
-- **Not built yet (8b):** the Room QR display page, the scanner and check-in dialog, the dev-only paste box, the Check in button going live, performance timing.
+
+### Phase 8, step 8b: the app half of check-in (2026-11-02)
+
+- **Room QR page** (`/room-qr?session=ID` or `?location=ID`): draws the code with `react-native-svg` (the `qrcode` package's core only, since its main entry is Node-only), a "Changes in N s" countdown, and asks the server for the next code the moment the countdown ends. Buttons: "Show room QR" on session details for an admin, or the lecturer of that session while check in is open (decision 1), and on location details for an admin when QR is on. The code's text is shown in development builds only.
+- **Check in screen** (`/check-in/ID`, opened by the now-live Check in button): the method list from the orchestrator (Bluetooth and NFC report "Not available on this device" until they are built, QR is "Scanning"), the camera scanner with the permission card ("Allow camera" / "Open settings"), the success screen ("You're checked in", status, time, method), and a plain-words message with "Try again" for every refusal. A code that is not shaped like a room code is rejected on the phone without a request. The server still decides everything.
+- **Paste box (decision 2):** "Dev only: enter a room code" is rendered only when `__DEV__` is true, so it is absent from production builds.
+- **Timing (NFR-05, under 5 s):** the tap is marked on the Check in button and read on the success screen; shown and logged in development only. In the browser the request itself took about 1.4 s (submit to success). The tap-to-success number on a phone is still to be recorded.
+- **Tests:** 107 pass (19 new: messages, orchestrator, timing, QR drawing, the API calls, and the check in screen with a mocked camera). Typecheck and lint are clean.
+- **Verified in the browser against the real project:** the admin and lecturer Room QR page (the code rolls over to a new step with a new MAC), the admin location button, and a student (S1000002) checking in with the paste box: late, method QR, row created by the student. A wrong MAC showed "That QR code is not valid here" with "Try again".
+- **Test data left behind:** S1000002 is now checked in (late) to today's throwaway session 119.
 
 ### Android emulator check (2026-11-02)
 
