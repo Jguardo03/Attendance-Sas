@@ -503,11 +503,21 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 
 ### Verification checklist
 
-- [ ] Student checks in via QR on device A; lecturer screen on device B updates within 10 s.
-- [ ] Change absent to present: row has `check_in_method = manual`, `updated_by = lecturer id`, reason saved; session % and class % recalculate.
-- [ ] Changing to absent nulls time and method (no constraint violation).
-- [ ] A lecturer cannot edit another lecturer's session (RLS/Edge test); admin can.
-- [ ] Missing reason blocks Save.
+- [x] Student checks in via QR on device A; lecturer screen on device B updates within 10 s. (Browser, lecturer signed in: a check in made from the database side with `record_check_in` showed up on the open session screen 1.4 s later, by realtime. The student's own device was not used.)
+- [x] Change absent to present: row has `check_in_method = manual`, `updated_by = lecturer id`, reason saved; session % and class % recalculate. (`supabase/tests/phase9_change_attendance.sql`; also done in the browser for a not-checked-in student.)
+- [x] Changing to absent nulls time and method (no constraint violation). (SQL test.)
+- [x] A lecturer cannot edit another lecturer's session (RLS/Edge test); admin can. (SQL test; the buttons are also hidden in the app.)
+- [x] Missing reason blocks Save. (Database, unit test and browser.)
+
+### Phase 9 as built
+
+- **Server:** migration `20261103010000_phase9_change_attendance.sql`. `public.change_attendance(student, session, status, time, reason)` is a `SECURITY DEFINER` RPC (not an Edge Function) that holds every rule: `attendance.edit_all`, or `attendance.edit` for a session of a schedule the caller teaches; session `started` or `finished` by the clock; student enrolled; reason required (trimmed, max 500, stored in `attendance.comments`); method always `manual`; time kept when only the status changes, session start when there was none, null for absent, a given time must lie between check in opening and the end; the same status again is refused as `no_change`. The audit row comes from `trg_attendance_audit` and `created_by` / `updated_by` from the stamping trigger. `public.attendance_history` reads the audit trail with the name of each person (no name = system). `attendance` was added to the `supabase_realtime` publication. 28 database checks pass.
+- **Attendee list:** "View record" on every row, "Check in manually" on students not checked in while the session is live (only for the session's lecturer or an admin). Live by realtime on `session_id`, with 10 s polling as fallback.
+- **Record and change flow:** `/attendance/[sessionId]/[studentId]` shows the record, last change and history; Change attendance has status, a 24 hour time, the fixed method, the required reason, then a "Save this change?" confirmation, as in the wireframes.
+- **Student history:** `/student/[id]` shows the student's email, the classes shared with the signed in person, per-class numbers, and each held session with a link to its record, filterable by status. Class details rows open it.
+- **Student side:** a student's own session screen listens for changes to their own rows (realtime on `student_id`), plus the existing one minute polling.
+- **Not done:** the optional Start / End session buttons (item 5). Not verified: the student's screen reflecting a lecturer's change (code path and filter only), Android and iOS, an admin signed in to the new screens (database test only).
+- **Test data left in the project:** session 38 (today's Web Development) now has a manual late for S1000007 and QR check ins for S1000005 and S1000009. Audit history cannot be deleted.
 
 ### Anti-patterns
 
