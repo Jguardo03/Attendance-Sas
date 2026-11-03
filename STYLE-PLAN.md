@@ -114,7 +114,7 @@ Text `#101828` on white 17:1. Primary on white 7.1:1, white on primary 7.1:1. Mu
 3. `tailwind.config.js`: add the new colours with the same `rgb(var(--x) / <alpha-value>)` pattern; add `borderRadius: { card: '20px', block: '14px', button: '12px' }`; add `fontFamily` entries `inter`, `inter-medium`, `inter-semibold`, `inter-bold` (copy the shape from nativewind.dev/docs/guides/custom-fonts); add `fontSize` entries for the six steps with line heights.
 4. Install fonts: `npx expo install @expo-google-fonts/inter expo-font expo-splash-screen` (expo-font and splash are already present; the command only adds Inter). Load the four weights with `useFonts` in `src/app/_layout.tsx` and hold the splash screen until loaded or errored (copy the snippet in the font docs). Check the export names in `node_modules/@expo-google-fonts/inter` first.
 5. Navigation theme: wrap the root in `ThemeProvider` from `expo-router` with `DefaultTheme` colours overridden (background `#F4F6FA`, card white, primary `#015C93`, text `#101828`, border `#E4E7EC`). Settle spike 3 here.
-6. `app.json`: splash `backgroundColor` to the primary or white, Android adaptive icon `backgroundColor` to the primary tint. **Decision needed:** set `userInterfaceStyle` to `light` (recommended, because there is no dark design and `automatic` would flip the status bar and keyboard on dark phones while the app stays light).
+6. `app.json`: `name` to "Attendancely" (keep `slug` and `scheme`), `userInterfaceStyle` to `light` (decided: no dark mode, and `automatic` would flip the status bar and keyboard on dark phones while the app stays light), splash `backgroundColor` to the primary `#015C93`, Android adaptive icon `backgroundColor` to `#015C93`. The camera permission text becomes "Allow Attendancely to use the camera to read the QR code shown in the room." The web `<title>` and any visible "Attendance SAS" text change to Attendancely. Note: `name`, `userInterfaceStyle` and splash changes need a new development build or an app restart in Expo Go; they do not apply to an already installed build.
 7. Tests: `src/__tests__/theme.test.ts`: (a) every colour in `tokens.ts` equals the matching triplet in `global.css` (drift guard), (b) the contrast pairs listed above meet 4.5:1 for text and 3:1 for large and graphic elements, (c) the six type steps and four radii exist in the tailwind config.
 8. Spikes 1, 5 and 6: render a throwaway card with `boxShadow` on web and on the Android emulator; confirm `bg-primary/10`; compare the three pill tints to the mockup.
 
@@ -212,9 +212,9 @@ Do not change a component's props contract; do not use opacity modifiers for bac
 
 1. **Spike first (web):** try `tabBarPosition: 'left'` with `tabBarVariant: 'material'` driven by `useWindowDimensions` (copy the candidate in the router docs summary; it is unverified on web). If it does not render a usable sidebar, fall back to a custom sidebar component rendered in the `(tabs)` layout beside the `Tabs` content (hide the built-in bar on wide screens), using `usePathname` and `useRouter` from `expo-router`. Keep `Tabs.Protected` for the Admin tab and declare every tab screen (SDK 58 rule). Record the result here.
 2. Bottom tab bar: icons from the registry, active tint primary, inactive muted, label 11 to 12, white background with a top border, height that respects the safe area.
-3. Sidebar and top bar per Student UI page 9 and Admin page 1: app mark with the name, `OVERVIEW` and `ACCOUNT` group labels, Sign out in red (use the existing sign-out confirmation), user chip with initials, name and role from the auth claims, bell icon (no behaviour yet; hide it if it has nothing to open, **decision**).
+3. Sidebar and top bar per Student UI page 9 and Admin page 1: app mark with the name, `OVERVIEW` and `ACCOUNT` group labels, Sign out in red (use the existing sign-out confirmation), user chip with initials, name and role from the auth claims, no bell icon for now (decided: nothing to open yet; leave the space so it can be added).
 4. `ScreenHeader` component: circular back button, title, optional status pill on the right (replaces the plain "Back" buttons on detail screens; keep each screen's existing back behaviour).
-5. Auth screens (Student UI 2 to 8): centred card, app mark, "Sign in", helper text, email field, primary button; code entry; device permissions "Set up check-in" with icon rows. **The mockup copy talks about an emailed link ("Send sign-in link", "This link has expired") but the app signs in with a 6 digit code. Keep the code flow and adapt the wording ("Send sign-in code", "This code has expired"). Decision needed.**
+5. Auth screens (Student UI 2 to 8): centred card, app mark, "Sign in", helper text, email field, primary button; code entry; device permissions "Set up check-in" with icon rows. The mockup copy talks about an emailed link ("Send sign-in link", "This link has expired") but the app signs in with a 6 digit code. Decided: keep the code flow and use the OTP wording ("Send sign-in code", "Check your email", "Enter the code", "This code has expired"). Update the existing sign-in tests only where they assert the old words.
 6. Tests: the existing sign-in, tabs and device permissions tests keep passing; add tests for the sidebar items per audience (student 4, lecturer 4, admin 5, from `audienceOf`/`can`), Sign out opening the confirmation, and the tab bar hiding Admin from non-admins.
 
 ### Documentation references
@@ -361,15 +361,37 @@ No animation that blocks check in; no information conveyed by colour alone.
 
 ---
 
-## Decisions needed from you
+## Decisions
 
-1. **Brand name:** the mockups say "Attendancely"; `app.json` and the code say "Attendance SAS". Use Attendancely in the screens and keep the store name?
-2. **Sign-in copy:** the mockups describe an emailed link; the app uses a 6 digit code. Keep the code and adapt the words (recommended)?
-3. **Dark mode:** none is drawn. Set `userInterfaceStyle` to `light` now (recommended) and treat dark mode as a later project?
-4. **Icons:** `expo-symbols` (no new package, small shape differences between iOS and Android or web) is the default. A consistent set such as Lucide would need an extra dependency and a development build or SVG copies. Accept the default?
-5. **App icon and splash artwork:** the mark exists only inside the PDFs. Can you export it as a 1024 px PNG, or should I redraw it from the PDF?
-6. **Bell icon:** show it only if there is something to open (nothing in the app yet), or draw it as in the mockups?
-7. **Reports page:** not in the mockups; apply the kit as described?
+Decided by the user on 2026-11-03:
+
+1. **Brand name: Attendancely.** Use it everywhere the user sees a name: sidebar, sign-in, page titles, `app.json` `name`, the web `<title>`, the camera permission text, emails' display name where we control it. Keep the technical `slug` (`attendance-sas`) and the `attendancesas` URL scheme unchanged so builds, deep links and the Netlify site keep working.
+2. **Sign-in copy: OTP.** Keep the 6 digit code flow and adapt the mockup words: "Send sign-in code", "Check your email", "Enter the code", "This code has expired. Request a new one." No link wording anywhere.
+3. **No dark mode.** Set `userInterfaceStyle` to `light` in `app.json` in Phase 1; no `dark:` classes, no dark token values.
+4. **Icons: `expo-symbols`**, with the per-platform name registry from Phase 2.
+5. **App icon:** the user will add the artwork to `assets/` (see "Icon and splash files" below).
+
+Not answered, so the plan proceeds with these defaults (say so if you want a change):
+
+6. **Bell icon:** hidden until there is something to open (there are no notifications yet). The sidebar and phone header are laid out so it can be added without moving anything.
+7. **Reports page:** not in the mockups; the kit is applied as described in Phase 7.
+
+### Icon and splash files
+
+The **splash screen** is the screen shown for a moment while the app starts on a phone, before the first screen is ready: today a plain blue background with the Expo logo in the middle (`splash-icon.png`, background `#208AEF` in `app.json`). It will become the Attendancely mark on the brand background.
+
+Files to provide in `assets/images/` (replacing the current Expo placeholders):
+
+| File | Size now | Needed | Content |
+|---|---|---|---|
+| `icon.png` | 1024x1024 | 1024x1024, no transparency | App icon (iOS and stores): the mark on the blue tile, full bleed |
+| `android-icon-foreground.png` | 512x512 | 1024x1024 recommended, transparent | The tick and beacon only, kept inside the centre 66% so Android's masks do not cut it |
+| `android-icon-background.png` | 512x512 | 1024x1024 | Plain `#015C93` (or the gradient) |
+| `android-icon-monochrome.png` | 432x432 | 1024x1024, transparent | The tick and beacon in one colour (Android themed icons) |
+| `splash-icon.png` | 228x213 | about 1024 wide, transparent | The mark alone (white tick and beacon works on the blue splash) |
+| `favicon.png` | 48x48 | 256x256 | The mark for the browser tab |
+
+One transparent SVG or a 1024 px PNG of the mark is enough for me to produce the rest if you prefer. Phase 1 changes the splash and adaptive-icon background colours in `app.json` to match; replacing the image files does not change code.
 
 ## Not in this plan
 
