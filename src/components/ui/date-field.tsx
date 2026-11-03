@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { addMonths, formatLong, monthGrid, monthNames, parseIso, toIso, todayIso, weekdayInitials } from '@/lib/dates';
+import { shadows } from '@/theme/tokens';
 
+import { fieldBorder, fieldBox } from './field';
 import { Text } from './text';
 
 function Step({ label, onPress, hint }: { label: string; onPress: () => void; hint: string }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={hint} onPress={onPress} className="h-10 w-10 items-center justify-center rounded-md border border-border">
-      <Text>{label}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={hint} onPress={onPress} className="h-10 w-10 items-center justify-center rounded-button border border-border active:opacity-80">
+      <Text className="font-inter-semibold text-primary">{label}</Text>
     </Pressable>
   );
 }
@@ -39,7 +42,9 @@ export function DateField({
 
   return (
     <View className="gap-1">
-      <Text variant="muted">{label}</Text>
+      <Text variant="meta" className="font-inter-medium">
+        {label}
+      </Text>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -51,13 +56,13 @@ export function DateField({
           }
           setOpen((current) => !current);
         }}
-        className="flex-row items-center justify-between rounded-md border border-border bg-surface px-3 py-3">
-        <Text className={selected ? '' : 'text-content-muted'}>{selected ? formatLong(selected) : 'Choose a date'}</Text>
-        <Text variant="muted">{open ? '▴' : '▾'}</Text>
+        className={`${fieldBox} ${open ? 'border-primary' : fieldBorder(error)}`}>
+        <Text className={`flex-1 ${selected ? '' : 'text-content-muted'}`}>{selected ? formatLong(selected) : 'Choose a date'}</Text>
+        <Icon name="calendar" size={20} color="contentMuted" />
       </Pressable>
 
       {open ? (
-        <View className="gap-2 rounded-md border border-border bg-surface p-3">
+        <View className="gap-2 rounded-block border border-border bg-surface p-3" style={{ boxShadow: shadows.card }}>
           <View className="flex-row items-center justify-between">
             <View className="flex-row gap-1">
               <Step label="«" hint="Previous year" onPress={() => move(-12)} />
@@ -96,7 +101,7 @@ export function DateField({
                           setOpen(false);
                         }}
                         className={`h-10 w-10 items-center justify-center rounded-full ${isSelected ? 'bg-primary' : ''}`}>
-                        <Text className={isSelected ? 'text-primary-content' : ''}>{day}</Text>
+                        <Text className={isSelected ? 'font-inter-semibold text-primary-content' : ''}>{day}</Text>
                       </Pressable>
                     ) : null}
                   </View>

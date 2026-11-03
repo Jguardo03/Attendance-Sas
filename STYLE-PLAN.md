@@ -218,6 +218,15 @@ Mockup pages: Student UI 1 (buttons, inputs, pills, cards, empty state), Admin 1
 
 Do not change a component's props contract; do not use opacity modifiers for backgrounds; no web-only classes in shared components (use `Platform.OS === 'web'` style branches where needed).
 
+### Phase 3 results (done 2026-11-03)
+
+- **Restyled in place, same props:** `Text` (new styles `section`, `card`, `meta`, `label` besides the old ones; `heading` is now the 17 bold section style), `Button` (primary, secondary = blue outline, danger, new `ghost`; height 44, `size="large"` 52, optional `icon`, press and disabled states), `Card` (radius 20 with the soft shadow; new `variant="flat"` and `variant="hero"`, the blue gradient from `expo-linear-gradient`), `Badge` (pills with the tint tokens and strong text colours; existing tones kept, new tones `live`, `upcoming`, `rescheduled`, `cancelled`, optional `dot`), `TextField` (44 high, radius 12, blue border on focus, red with an error, taller when multi-line, placeholder colour from tokens), `Select` (round chips), `Dropdown` (chevron, tick on the chosen row, shadowed menu), `DateField` and `TimeField` (same field look, calendar icon), `Collapsible` (card with chevron), `Checkbox` (real tick or dash icon, 44 high), `Screen` (20 px side margins). A shared `field.ts` holds the common input look.
+- **New:** `Banner` (error, warning, info, success, with icon, optional title, actions and dismiss; an error is one announcement for screen readers with its buttons kept reachable), `EmptyState` (icon, title, line, action), `SegmentedTabs` (Active period | Previous), `ListRow` (icon tile, title, subtitle, chevron or custom trailing). A `minus` icon was added for the partly-ticked checkbox.
+- **Dev gallery:** `src/features/dev/kit-gallery.tsx` shows every variant and state at the top of `/dev/ui`.
+- **Tests:** the 195 existing tests pass unchanged; 24 new ones in `ui-kit.test.tsx` (variants, disabled, icon tint, pills always show text, gradient colours, errors, chosen state, mixed checkbox, banner announce and dismiss, empty state, tabs, list rows). `expo-linear-gradient` is mocked for Jest in `jest/expo-linear-gradient.tsx`.
+- **Verified:** web (gallery sections and the admin Today screen, which picked up the new look with no edits) and the Android emulator (gallery and the real student Home). Screens that still use their own styling and will be rebuilt in later phases: the admin "Stat" tiles (border instead of shadow), and four places with `/10` opacity tints (`crud-error.tsx` becomes a `Banner` in Phase 7; `location-picker.tsx`, `admin-calendar.tsx`, `student-history.tsx` get the tint token in Phases 5 to 7).
+- **Not verified:** iOS. The status words on session cards still use the old tone mapping (`statusBadge` maps Live to success, Upcoming to neutral); Phase 5 switches the screens to the new `live` and `upcoming` tones when they are rebuilt.
+
 ---
 
 ## Phase 4: App shell (tab bar, desktop sidebar, headers) and sign-in screens

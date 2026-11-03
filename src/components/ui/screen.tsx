@@ -31,7 +31,7 @@ export function Screen({ title, standalone = false, children }: { title: string;
       <ScrollView
         ref={ref}
         className="flex-1 bg-surface-muted"
-        contentContainerClassName="mx-auto w-full max-w-3xl gap-4 px-4"
+        contentContainerClassName="mx-auto w-full max-w-3xl gap-4 px-5"
         contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: (standalone ? insets.bottom : 0) + 16 }}>
         <Text variant="title">{title}</Text>
         {children}

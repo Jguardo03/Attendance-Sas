@@ -9,6 +9,8 @@ import { Icon, icons, type IconName } from '@/components/icon';
 import { Button, Card, Screen, Text } from '@/components/ui';
 import { colors, typeScale, type ColorToken } from '@/theme/tokens';
 
+import { KitGallery } from './kit-gallery';
+
 // Development only (the route is registered only when __DEV__): every visual building block in one place, so a
 // change to a token or a component can be checked on web and on a phone in a minute. Opened from Profile.
 const swatches = Object.entries(colors) as [ColorToken, string][];
@@ -27,6 +29,8 @@ export function UiGallery() {
   return (
     <Screen standalone title="UI gallery">
       <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+
+      <KitGallery />
 
       <Card title="Colours">
         <View className="flex-row flex-wrap gap-3">

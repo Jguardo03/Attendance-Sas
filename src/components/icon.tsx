@@ -19,6 +19,7 @@ export const icons = {
   check: icon('checkmark', 'check'),
   close: icon('xmark', 'close'),
   plus: icon('plus', 'add'),
+  minus: icon('minus', 'remove'),
   pencil: icon('pencil', 'edit'),
   trash: icon('trash', 'delete'),
   search: icon('magnifyingglass', 'search'),

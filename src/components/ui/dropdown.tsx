@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
+import { shadows } from '@/theme/tokens';
+
+import { fieldBorder, fieldBox } from './field';
 import { Text } from './text';
 
 type Option = { value: string; label: string };
@@ -29,18 +33,22 @@ export function Dropdown({
 
   return (
     <View className="gap-1">
-      {label ? <Text variant="muted">{label}</Text> : null}
+      {label ? (
+        <Text variant="meta" className="font-inter-medium">
+          {label}
+        </Text>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((current) => !current)}
-        className="flex-row items-center justify-between rounded-md border border-border bg-surface px-3 py-3">
-        <Text className={selected ? '' : 'text-content-muted'}>{selected?.label ?? placeholder}</Text>
-        <Text variant="muted">{open ? '▴' : '▾'}</Text>
+        className={`${fieldBox} ${open ? 'border-primary' : fieldBorder(error)}`}>
+        <Text className={`flex-1 ${selected ? '' : 'text-content-muted'}`}>{selected?.label ?? placeholder}</Text>
+        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={20} color="contentMuted" />
       </Pressable>
       {open ? (
-        <View className="max-h-60 rounded-md border border-border bg-surface">
+        <View className="max-h-60 overflow-hidden rounded-block border border-border bg-surface" style={{ boxShadow: shadows.card }}>
           <ScrollView nestedScrollEnabled>
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -53,8 +61,9 @@ export function Dropdown({
                     onChange(option.value);
                     setOpen(false);
                   }}
-                  className={`px-3 py-3 ${isSelected ? 'bg-primary/10' : ''}`}>
-                  <Text>{isSelected ? `✓ ${option.label}` : option.label}</Text>
+                  className={`min-h-11 flex-row items-center justify-between px-3 py-2 ${isSelected ? 'bg-primary-tint' : ''}`}>
+                  <Text className={`flex-1 ${isSelected ? 'font-inter-semibold text-primary' : ''}`}>{option.label}</Text>
+                  {isSelected ? <Icon name="check" size={18} color="primary" /> : null}
                 </Pressable>
               );
             })}

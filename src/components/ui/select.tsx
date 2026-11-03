@@ -4,7 +4,7 @@ import { Text } from './text';
 
 type Option = { value: string; label: string };
 
-// Small choice list shown as buttons. Meant for short lists (status, role, email format).
+// Small choice list shown as round buttons. Meant for short lists (status, role, email format).
 export function Select({
   label,
   value,
@@ -20,7 +20,9 @@ export function Select({
 }) {
   return (
     <View className="gap-1" accessibilityRole="radiogroup" accessibilityLabel={label}>
-      <Text variant="muted">{label}</Text>
+      <Text variant="meta" className="font-inter-medium">
+        {label}
+      </Text>
       <View className="flex-row flex-wrap gap-2">
         {options.map((option) => {
           const selected = option.value === value;
@@ -30,8 +32,8 @@ export function Select({
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               onPress={() => onChange(option.value)}
-              className={`rounded-full border px-3 py-2 ${selected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
-              <Text className={selected ? 'text-primary-content' : 'text-content'}>{option.label}</Text>
+              className={`min-h-10 justify-center rounded-full border px-4 active:opacity-80 ${selected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
+              <Text className={`font-inter-medium ${selected ? 'text-primary-content' : 'text-content'}`}>{option.label}</Text>
             </Pressable>
           );
         })}
