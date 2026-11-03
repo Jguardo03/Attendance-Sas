@@ -19,6 +19,7 @@ import {
   statusBadge,
 } from './format';
 import { useAttendees, useMyAttendance, useSession } from './queries';
+import { useAttendanceRealtime } from './realtime';
 
 const PREVIEW = 5;
 
@@ -33,6 +34,8 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
   const isStudent = audienceOf(can) === 'student';
   const mine = useMyAttendance(isStudent ? claims?.appUserId : null, [sessionId]);
   const attendees = useAttendees(sessionId, isStudent);
+  // A student's own record can change under them (a lecturer checks them in): hear about it at once.
+  useAttendanceRealtime(isStudent && claims?.appUserId ? `student_id=eq.${claims.appUserId}` : null);
 
   const back = <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
 

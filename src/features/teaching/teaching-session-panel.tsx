@@ -1,11 +1,14 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Card, Dropdown, Text, TextField } from '@/components/ui';
+import { Badge, Button, Card, Dropdown, Text, TextField } from '@/components/ui';
+import { canChangeAttendance } from '@/features/attendance-edit/logic';
 import { checkedInAt, hhmm, methodLabel, type Session } from '@/features/sessions/format';
 import { useAttendanceList } from '@/features/sessions/queries';
+import { useAttendanceRealtime } from '@/features/sessions/realtime';
 import { attendeeStatus, type AttendeeStatus } from '@/features/sessions/teaching';
+import { useAuth } from '@/providers/auth';
 
 function Figure({ value, label }: { value: string | number; label: string }) {
   return (
@@ -19,10 +22,15 @@ function Figure({ value, label }: { value: string | number; label: string }) {
 const tone = (status: AttendeeStatus) => (status === 'Present' ? 'success' : status === 'Late' ? 'warning' : status === 'Absent' ? 'danger' : 'neutral');
 
 // The lecturer's and admin's view of one session: the counts and every enrolled student with their status.
-// Read-only for now; correcting a record comes with the attendance editing phase.
+// Each student opens their record, where a lecturer (of this session) or an admin changes it or checks the student in.
 export function TeachingSessionPanel({ session }: { session: Session }) {
   const checkInOpen = session.status !== 'cancelled' && session.status !== 'finished' && session.now_local >= session.check_in_opens_at;
+  const router = useRouter();
+  const { can, claims } = useAuth();
   const list = useAttendanceList(session.session_id, true, checkInOpen);
+  // New check ins and changes arrive as they happen; the 10 second polling above is the fallback.
+  useAttendanceRealtime(`session_id=eq.${session.session_id}`);
+  const editable = canChangeAttendance(session, can, claims?.appUserId);
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
 
@@ -99,6 +107,12 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
               {row.student_id}
               {row.status === 'present' || row.status === 'late' ? ` · ${checkedInAt({ session_id: session.session_id, status: row.status, checked_in_at: row.checked_in_at, check_in_method: row.check_in_method })} · ${methodLabel(row.check_in_method)}` : ''}
             </Text>
+            <View className="flex-row flex-wrap gap-2">
+              <Button variant="secondary" label="View record" onPress={() => router.push(`/attendance/${session.session_id}/${row.student_id}`)} />
+              {editable && session.status === 'started' && label === 'Not checked in' ? (
+                <Button label="Check in manually" onPress={() => router.push(`/attendance/${session.session_id}/${row.student_id}?edit=1`)} />
+              ) : null}
+            </View>
           </View>
         ))}
       </Card>

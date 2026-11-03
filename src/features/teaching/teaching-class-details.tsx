@@ -109,7 +109,8 @@ export function TeachingClassDetails({ scheduleId }: { scheduleId: number }) {
           {list.map((student) => {
             const pct = student.attendance_pct === null ? null : Math.round(Number(student.attendance_pct));
             return (
-              <Card key={student.student_id}>
+              <Pressable key={student.student_id} accessibilityRole="link" accessibilityLabel={`${student.first_name} ${student.last_name} ${student.student_id}`} onPress={() => router.push(`/student/${student.student_id}?schedule=${scheduleId}`)}>
+              <Card>
                 <View className="flex-row items-center justify-between gap-2">
                   <Text variant="heading" className="flex-1">
                     {student.first_name} {student.last_name}
@@ -121,6 +122,7 @@ export function TeachingClassDetails({ scheduleId }: { scheduleId: number }) {
                   {pct === null ? '' : ` · ${student.present} present · ${student.late} late · ${student.absent} absent`}
                 </Text>
               </Card>
+              </Pressable>
             );
           })}
         </>

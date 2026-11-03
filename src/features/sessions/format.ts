@@ -35,6 +35,8 @@ export type MyAttendance = {
   status: 'present' | 'late' | 'absent';
   checked_in_at: string | null;
   check_in_method: 'beacon' | 'nfc' | 'qr' | 'manual' | null;
+  /** The reason saved with a manual change. */
+  comments?: string | null;
 };
 
 export const hhmm = (value: string | null | undefined) => String(value ?? '').slice(0, 5);
@@ -107,18 +109,34 @@ export function attendanceLabel(session: Session, attendance?: MyAttendance | nu
   return 'Not checked in yet';
 }
 
-export function checkedInAt(attendance?: MyAttendance | null): string {
-  if (!attendance?.checked_in_at) return '-';
+/** "08:54" in Melbourne time from a stored instant, or '' when there is none. */
+export function melbourneTime(iso: string | null | undefined): string {
+  if (!iso) return '';
   try {
     return new Intl.DateTimeFormat('en-AU', {
       timeZone: 'Australia/Melbourne',
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-    }).format(new Date(attendance.checked_in_at));
+    }).format(new Date(iso));
   } catch {
-    return attendance.checked_in_at.slice(11, 16);
+    return iso.slice(11, 16);
   }
+}
+
+/** "23/10/2026 08:30" in Melbourne time from a stored instant, or '' when there is none. */
+export function melbourneDateTime(iso: string | null | undefined): string {
+  if (!iso) return '';
+  try {
+    const date = new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Melbourne', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso));
+    return `${date} ${melbourneTime(iso)}`;
+  } catch {
+    return iso.slice(0, 16).replace('T', ' ');
+  }
+}
+
+export function checkedInAt(attendance?: Partial<MyAttendance> | null): string {
+  return melbourneTime(attendance?.checked_in_at) || '-';
 }
 
 /** "09:00 to 11:00 · Room 1.01" */

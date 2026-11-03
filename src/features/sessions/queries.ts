@@ -106,7 +106,7 @@ export function useMyAttendance(userId: string | null | undefined, sessionIds: n
     queryFn: async () => {
       const { data, error } = await client()
         .from('attendance')
-        .select('session_id, status, checked_in_at, check_in_method')
+        .select('session_id, status, checked_in_at, check_in_method, comments')
         .eq('student_id', userId as string)
         .in('session_id', ids);
       if (error) throw error;
@@ -299,6 +299,104 @@ export function useAdminTodayCounts() {
       const { data, error } = await client().rpc('admin_today_counts');
       if (error) throw error;
       return ((data ?? [])[0] ?? { sessions_today: 0, live_now: 0, upcoming: 0, finished: 0, rescheduled_or_cancelled: 0 }) as unknown as TodayCounts;
+    },
+  });
+}
+
+// ---- One attendance record and one student ------------------------------------------------------------------------
+
+export type AttendanceRecord = {
+  student_id: string;
+  session_id: number;
+  status: 'present' | 'late' | 'absent';
+  checked_in_at: string | null;
+  check_in_method: 'beacon' | 'nfc' | 'qr' | 'manual' | null;
+  comments: string | null;
+  updated_at: string;
+};
+
+/** The record of one student in one session; null when there is none yet (not checked in). */
+export function useAttendanceRecord(sessionId: number, studentId: string) {
+  return useQuery({
+    queryKey: ['sessions', 'attendance-record', sessionId, studentId],
+    refetchInterval: MINUTE,
+    queryFn: async () => {
+      const { data, error } = await client()
+        .from('attendance')
+        .select('student_id, session_id, status, checked_in_at, check_in_method, comments, updated_at')
+        .eq('session_id', sessionId)
+        .eq('student_id', studentId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as unknown as AttendanceRecord) ?? null;
+    },
+  });
+}
+
+export type AttendanceHistoryRow = {
+  changed_at: string;
+  old_status: string | null;
+  new_status: string;
+  old_checked_in_at: string | null;
+  new_checked_in_at: string | null;
+  new_check_in_method: string | null;
+  reason: string | null;
+  changed_by: string | null;
+  changed_by_name: string | null;
+};
+
+/** Every change to a record, newest first. Empty for people who may not see the history. */
+export function useAttendanceHistory(studentId: string, sessionId: number) {
+  return useQuery({
+    queryKey: ['sessions', 'attendance-history', sessionId, studentId],
+    queryFn: async () => {
+      const { data, error } = await client().rpc('attendance_history', { p_student_id: studentId, p_session_id: sessionId });
+      if (error) throw error;
+      return (data ?? []) as unknown as AttendanceHistoryRow[];
+    },
+  });
+}
+
+export type StudentInfo = { id: string; first_name: string; last_name: string; email: string };
+
+export function useStudentInfo(studentId: string) {
+  return useQuery({
+    queryKey: ['sessions', 'student-info', studentId],
+    queryFn: async () => {
+      const { data, error } = await client().from('users').select('id, first_name, last_name, email').eq('id', studentId).maybeSingle();
+      if (error) throw error;
+      return (data as unknown as StudentInfo) ?? null;
+    },
+  });
+}
+
+/** The student's classes that the signed-in person can see: a lecturer's own classes, an admin's all of them. */
+export function useSharedSchedules(studentId: string) {
+  return useQuery({
+    queryKey: ['sessions', 'shared-schedules', studentId],
+    queryFn: async () => {
+      const enrolled = await client().from('enrollment').select('class_schedule_id').eq('user_id', studentId);
+      if (enrolled.error) throw enrolled.error;
+      const ids = (enrolled.data ?? []).map((row) => row.class_schedule_id);
+      if (ids.length === 0) return [] as ScheduleOverview[];
+      const { data, error } = await client().from('schedule_overview').select('*').in('schedule_id', ids).order('class_name');
+      if (error) throw error;
+      return (data ?? []) as unknown as ScheduleOverview[];
+    },
+  });
+}
+
+export type StudentClassNumbers = { finished_sessions: number; present: number; late: number; absent: number; attendance_pct: number | null };
+
+/** One student's numbers in one class: "6 of 13 attended · 46%". */
+export function useStudentClassNumbers(studentId: string, scheduleId: number | null) {
+  return useQuery({
+    queryKey: ['sessions', 'student-class-numbers', studentId, scheduleId],
+    enabled: scheduleId !== null,
+    queryFn: async () => {
+      const { data, error } = await client().rpc('student_class_attendance', { p_student_id: studentId, p_schedule_id: scheduleId as number });
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as unknown as StudentClassNumbers | null;
     },
   });
 }

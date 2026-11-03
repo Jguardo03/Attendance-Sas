@@ -889,6 +889,30 @@ export type Database = {
           student_id: string
         }[]
       }
+      attendance_history: {
+        Args: { p_session_id: number; p_student_id: string }
+        Returns: {
+          changed_at: string
+          changed_by: string
+          changed_by_name: string
+          new_check_in_method: string
+          new_checked_in_at: string
+          new_status: string
+          old_checked_in_at: string
+          old_status: string
+          reason: string
+        }[]
+      }
+      change_attendance: {
+        Args: {
+          p_reason: string
+          p_session_id: number
+          p_status: Database["public"]["Enums"]["attendance_status"]
+          p_student_id: string
+          p_time: string | null
+        }
+        Returns: Json
+      }
       generate_sessions: { Args: { p_schedule_id: number }; Returns: number }
       is_allowed_email: { Args: { p_email: string }; Returns: boolean }
       locations_availability: {
