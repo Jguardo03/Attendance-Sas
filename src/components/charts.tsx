@@ -60,9 +60,11 @@ export function ProgressRing({
 const segmentColor = { present: colors.success, late: colors.warning, absent: colors.danger } as const;
 
 /** A donut split into present, late and absent, with the share attended in the middle ("89% overall"). */
-export function BreakdownRing({ present, late, absent, size = 96, strokeWidth = 10, caption = 'overall' }: RingCounts & { size?: number; strokeWidth?: number; caption?: string }) {
+/** `percent` is the figure from the database; when given it is shown instead of the one worked out from the counts. */
+export function BreakdownRing({ present, late, absent, size = 96, strokeWidth = 10, caption = 'overall', percent }: RingCounts & { size?: number; strokeWidth?: number; caption?: string; percent?: number | null }) {
   const radius = (size - strokeWidth) / 2;
-  const { total, attendedPercent, segments } = ringSegments({ present, late, absent }, radius);
+  const { total, attendedPercent: worked, segments } = ringSegments({ present, late, absent }, radius);
+  const attendedPercent = total === 0 ? null : percent !== undefined && percent !== null ? Math.round(percent) : worked;
 
   return (
     <View

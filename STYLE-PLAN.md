@@ -299,6 +299,22 @@ Student UI pages above; `src/features/student/*`, `src/features/sessions/*`, `sr
 
 No change to queries, routes, copy that tests assert, or the check-in orchestrator; artwork never replaces text; the Check in button keeps its disabled reasons.
 
+### Phase 5 results (done 2026-11-03)
+
+- **Rebuilt, with every query, route and tested word unchanged (all 252 earlier tests pass without edits):**
+  - **Home** (`student/home.tsx`): avatar, date and "Hi, [first name]"; a blue hero with "Live now", the class, time and room and a Check in button while a session is live; "Today's sessions" as artwork cards; the "My attendance" donut over all classes (`attendance-summary.tsx`, counts from the database); "Coming up" with date blocks (`upcoming-row.tsx`); empty states "No sessions today" (with the next session and an Open calendar action) and "No classes yet" ("Welcome, [first name]"). From 1280 px wide the donut and Coming up move to a column on the right.
+  - **Session card** (`session-card.tsx`, shared with the Calendar): artwork strip with the status pill, name, time and room with a clock, the lecturer with an avatar, and for a student a Check in button, or a disabled "Check in opens at 08:50".
+  - **Classes:** "Active period | Previous" tabs; cards with artwork thumbnail, slot, lecturer, "Below 75%" in red and a percentage ring from the database; empty states with "See previous periods".
+  - **Class details:** back header, a blue hero with the ring in a white circle and "2 present · 0 late · 2 absent", slot and room, lecturer card, "Previous | Upcoming" tabs, session rows with pills (attendance pills with a dot, Cancelled struck through).
+  - **Calendar:** a week strip of day chips (today outlined, chosen day solid blue, a dot when something is on), icon buttons for the previous and next week, "This week" only when away from it, and the chosen day's sessions below.
+  - **Session details:** header with the status pill, a meta card (date, time, room), then the right card for the moment: the blue "You haven't checked in yet" with Check in, a "You're checked in" banner, "Check in opens at 12:50" with a disabled button, "This session was cancelled", plus "My attendance" (status pill, time, method, and "Something wrong? Ask your lecturer to correct it."), the lecturer card and the attendees with avatars. Lecturers and admins keep their panel.
+  - **Check in:** a blue banner that says what to do now (scan, checking, or "We couldn't check you in" with a yellow hand), the methods with icon tiles and chips ("Scanning", "Not available on this device"), the camera, a red error banner with Try again, and a centred green tick success screen. The dev paste box is unchanged.
+  - **Profile:** big avatar, name, "Student · S1000002", the Check-in permissions list (students only), personal info rows, and Sign out asking first.
+- **New small pieces:** `Screen` takes an optional `header` instead of the plain title; `sessionPill` and `attendancePill` (the new pill tones; the old `statusBadge` stays for the lecturer and admin screens until Phases 6 and 7); `BreakdownRing` can show the database's percentage instead of one worked out from the counts; `ClassArtwork` has `fit="whole"` for wide strips so shapes are not cut off; `useIsExtraWide`.
+- **Tests:** 30 new in `student-screens.test.tsx` (pills, session card states, Home live, empty and no-classes states, Classes tabs and red below 75%, Calendar chips and weeks, Session details in each state, Profile). 282 in total; typecheck and lint pass.
+- **Verified:** web at 1024 px as the demo student, with a temporary live session: Home, Classes, Class details, Calendar, Session details, Check in (scanning and the failure state after a wrong code), Profile. Android emulator as the same student: Home (matches mockup page 10), Classes (artwork thumbnails, red "Below 75%", rings) and Check in (hero, method chips, camera card). On the emulator the method chips read "Not available on this device" because it has no Bluetooth/NFC and the camera is not yet allowed.
+- **Not verified:** the check in success screen (it needs a real check in, which cannot be undone because attendance history is permanent), the Cancelled and Finished session variants on screen (covered by tests), iOS.
+
 ---
 
 ## Phase 6: Lecturer screens

@@ -40,10 +40,14 @@ const patterns: ReactNode[] = [
   </>,
 ];
 
-/** Fills whatever box it is placed in (the pattern is cropped to fit, never stretched). Decorative: no label. */
-export function ClassArtwork({ classId }: { classId: number }) {
+/**
+ * Fills whatever box it is placed in, never stretched. `crop` (the default) fills the box and trims the edges: good
+ * for squares and thumbnails. `whole` shows the entire pattern centred, with cream either side: good for wide, short
+ * strips, where cropping would cut the shapes off. Decorative: no label.
+ */
+export function ClassArtwork({ classId, fit = 'crop' }: { classId: number; fit?: 'crop' | 'whole' }) {
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice">
+    <Svg width="100%" height="100%" viewBox="0 0 160 90" preserveAspectRatio={fit === 'whole' ? 'xMidYMid meet' : 'xMidYMid slice'}>
       <Rect width={160} height={90} fill={colors.cream} />
       {patterns[artworkIndex(classId)]}
     </Svg>

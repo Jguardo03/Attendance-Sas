@@ -1,55 +1,60 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { Badge, Button, Card, Screen, Select, Text } from '@/components/ui';
+import { Avatar } from '@/components/avatar';
+import { BreakdownRing } from '@/components/charts';
+import { Icon } from '@/components/icon';
+import { Badge, Card, Screen, ScreenHeader, SegmentedTabs, Text } from '@/components/ui';
 import { useAuth } from '@/providers/auth';
 
 import {
   attendanceLabel,
+  attendancePill,
   checkedInAt,
   formatDayShort,
   methodLabel,
+  sessionPill,
   slotLabel,
-  statusBadge,
   timeRange,
   type MyAttendance,
   type Session,
 } from './format';
 import { useAppNow, useMyAttendance, useSchedule, useSessions, useStudentOverview } from './queries';
 
-function ClassSessionRow({ session, attendance, previous }: { session: Session; attendance?: MyAttendance | null; previous: boolean }) {
+function ClassSessionRow({ session, attendance, previous, last }: { session: Session; attendance?: MyAttendance | null; previous: boolean; last: boolean }) {
   const router = useRouter();
-  const badge = statusBadge(session.status);
+  const upcoming = sessionPill(session.status);
+  const word = attendanceLabel(session, attendance);
+  const attended = attendance && attendance.status !== 'absent';
+
   return (
-    <Pressable accessibilityRole="link" accessibilityLabel={`${formatDayShort(session.session_date)} ${timeRange(session)}`} onPress={() => router.push(`/session/${session.session_id}`)}>
-      <Card>
-        <Text variant="heading">
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`${formatDayShort(session.session_date)} ${timeRange(session)}`}
+      onPress={() => router.push(`/session/${session.session_id}`)}
+      className={`min-h-14 flex-row items-center gap-3 py-2 active:opacity-80 ${last ? '' : 'border-b border-border'}`}>
+      <View className="flex-1 gap-0.5">
+        <Text variant="card">
           {formatDayShort(session.session_date)} · {timeRange(session)}
         </Text>
-        {previous ? (
-          session.status === 'cancelled' ? (
-            <Badge label="Cancelled" tone="danger" />
-          ) : (
-            <>
-              <Text variant="muted">
-                {attendance && attendance.status !== 'absent' ? `Checked in ${checkedInAt(attendance)} · ${methodLabel(attendance.check_in_method)}` : 'No check-in'}
-              </Text>
-              <Badge label={attendanceLabel(session, attendance)} tone={attendanceLabel(session, attendance) === 'Absent' ? 'danger' : attendanceLabel(session, attendance) === 'Late' ? 'warning' : 'success'} />
-            </>
-          )
+        <Text variant="meta">{previous ? (attended ? `Checked in ${checkedInAt(attendance)} · ${methodLabel(attendance.check_in_method)}` : 'No check-in') : session.location_name}</Text>
+      </View>
+      {previous ? (
+        session.status === 'cancelled' ? (
+          <Badge label="Cancelled" tone="cancelled" />
         ) : (
-          <>
-            <Text variant="muted">{session.location_name}</Text>
-            <Badge label={badge.label} tone={badge.tone} />
-          </>
-        )}
-      </Card>
+          <Badge label={word} {...attendancePill(word)} />
+        )
+      ) : (
+        <Badge label={upcoming.label} tone={upcoming.tone} dot={upcoming.dot} />
+      )}
     </Pressable>
   );
 }
 
-// Class details for a student: the class, "My attendance in this class", and its upcoming and previous sessions.
+// Class details for a student (Student UI page 20): the class, "My attendance in this class" with the ring and counts,
+// the lecturer, and the class's upcoming and previous sessions.
 export function ClassDetails({ scheduleId }: { scheduleId: number }) {
   const router = useRouter();
   const { claims } = useAuth();
@@ -60,12 +65,10 @@ export function ClassDetails({ scheduleId }: { scheduleId: number }) {
   const numbers = useStudentOverview(claims?.appUserId);
   const attendance = useMyAttendance(claims?.appUserId, (sessions.data ?? []).map((session) => session.session_id));
 
-  const back = (
-    <Button variant="secondary" label="Back to Classes" onPress={() => (router.canGoBack() ? router.back() : router.replace('/classes'))} />
-  );
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/classes'));
 
-  if (schedule.isPending) return <Screen standalone title="Class details">{back}<Text variant="muted">Loading...</Text></Screen>;
-  if (!schedule.data) return <Screen standalone title="Class details">{back}<Text variant="error">This class was not found.</Text></Screen>;
+  if (schedule.isPending) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Text variant="muted">Loading...</Text></Screen>;
+  if (!schedule.data) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Text variant="error">This class was not found.</Text></Screen>;
 
   const info = schedule.data;
   const mine = numbers.data?.get(scheduleId);
@@ -74,54 +77,79 @@ export function ClassDetails({ scheduleId }: { scheduleId: number }) {
   const upcoming = all.filter((session) => session.ends_at > nowLocal);
   const previous = all.filter((session) => session.ends_at <= nowLocal).reverse();
   const shown = tab === 'upcoming' ? upcoming : previous;
+  const lecturer = `${info.lecturer_first_name ?? ''} ${info.lecturer_last_name ?? ''}`.trim();
 
   return (
-    <Screen standalone title={info.class_name}>
-      {back}
+    <Screen standalone title={info.class_name} header={<ScreenHeader title={info.class_name} subtitle={`${info.period_name} (${info.period_status})`} onBack={goBack} />}>
+      <Card variant="hero">
+        <View className="flex-row items-center gap-4">
+          {mine && mine.attendance_pct !== null ? (
+            <>
+              <View className="rounded-full bg-surface p-1">
+                <BreakdownRing present={Number(mine.present)} late={Number(mine.late)} absent={Number(mine.absent)} percent={Number(mine.attendance_pct)} size={76} strokeWidth={8} caption="" />
+              </View>
+              <View className="flex-1 gap-1">
+                <Text variant="card" className="text-primary-content">
+                  My attendance in this class
+                </Text>
+                <Text className="text-primary-content">
+                  {mine.present} present · {mine.late} late · {mine.absent} absent
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View className="flex-1 gap-1">
+              <Text variant="card" className="text-primary-content">
+                My attendance in this class
+              </Text>
+              <Text className="text-primary-content">No finished sessions yet.</Text>
+            </View>
+          )}
+        </View>
+      </Card>
+
       <Card>
-        <Text variant="muted">
-          Term: {info.period_name} ({info.period_status})
-        </Text>
-        <Text variant="muted">Day + time: {slotLabel(info.week_day, info.start_time, info.end_time)}</Text>
-        <Text variant="muted">Frequency: {info.frequency_name}</Text>
-        <Text variant="muted">Location: {info.location_name}</Text>
-        <Text variant="muted">
-          Lecturer: {info.lecturer_first_name} {info.lecturer_last_name}
-        </Text>
-        {info.lecturer_email ? <Text variant="muted">{info.lecturer_email}</Text> : null}
-        {info.class_description ? <Text>{info.class_description}</Text> : null}
+        <View className="flex-row items-center gap-2">
+          <Icon name="clock" size={18} color="contentMuted" />
+          <Text className="flex-1">
+            {slotLabel(info.week_day, info.start_time, info.end_time)} · {info.frequency_name}
+          </Text>
+        </View>
+        {info.location_name ? (
+          <View className="flex-row items-center gap-2">
+            <Icon name="pin" size={18} color="contentMuted" />
+            <Text className="flex-1">{info.location_name}</Text>
+          </View>
+        ) : null}
+        {info.class_description ? <Text variant="meta">{info.class_description}</Text> : null}
       </Card>
 
-      <Card title="My attendance in this class">
-        {mine && mine.attendance_pct !== null ? (
-          <>
-            <Text variant="title">{Math.round(Number(mine.attendance_pct))}%</Text>
-            <Text variant="muted">
-              {mine.present} present · {mine.late} late · {mine.absent} absent
-            </Text>
-          </>
-        ) : (
-          <Text variant="muted">No finished sessions yet.</Text>
-        )}
+      <Card>
+        <View className="flex-row items-center gap-3">
+          <Avatar name={lecturer} id={info.lecturer_id} size={44} />
+          <View className="flex-1">
+            <Text variant="meta">Lecturer</Text>
+            <Text variant="card">{lecturer}</Text>
+            {info.lecturer_email ? <Text variant="meta">{info.lecturer_email}</Text> : null}
+          </View>
+        </View>
       </Card>
 
-      <Select
+      <SegmentedTabs
         label="Sessions"
         value={tab}
         options={[
-          { value: 'upcoming', label: 'Upcoming' },
           { value: 'previous', label: 'Previous' },
+          { value: 'upcoming', label: 'Upcoming' },
         ]}
         onChange={(value) => setTab(value as 'upcoming' | 'previous')}
       />
-      {sessions.data && shown.length === 0 ? (
-        <Card>
-          <Text variant="muted">{tab === 'upcoming' ? 'No upcoming sessions.' : 'No previous sessions.'}</Text>
-        </Card>
-      ) : null}
-      {shown.map((session) => (
-        <ClassSessionRow key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} previous={tab === 'previous'} />
-      ))}
+      <Card>
+        {sessions.data && shown.length === 0 ? <Text variant="meta">{tab === 'upcoming' ? 'No upcoming sessions.' : 'No previous sessions.'}</Text> : null}
+        {shown.map((session, index) => (
+          <ClassSessionRow key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} previous={tab === 'previous'} last={index === shown.length - 1} />
+        ))}
+      </Card>
     </Screen>
   );
 }

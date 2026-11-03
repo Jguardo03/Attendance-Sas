@@ -1,4 +1,5 @@
 // What the session screens show, worked out from a session_overview row. No data fetching here, so it can be tested.
+import type { BadgeTone } from '@/components/ui';
 import { formatDayLong, formatDayShort } from '@/lib/dates';
 
 export type SessionStatus = 'scheduled' | 'rescheduled' | 'started' | 'finished' | 'cancelled';
@@ -64,6 +65,27 @@ export function statusBadge(status: SessionStatus): { label: string; tone: 'neut
     default:
       return { label: 'Upcoming', tone: 'neutral' };
   }
+}
+
+/** The session pill in the mockup style: Live is solid blue with a dot, Upcoming a blue tint, and so on. */
+export function sessionPill(status: SessionStatus): { label: string; tone: BadgeTone; dot: boolean } {
+  switch (status) {
+    case 'started':
+      return { label: 'Live', tone: 'live', dot: true };
+    case 'finished':
+      return { label: 'Finished', tone: 'neutral', dot: false };
+    case 'cancelled':
+      return { label: 'Cancelled', tone: 'cancelled', dot: false };
+    case 'rescheduled':
+      return { label: 'Rescheduled', tone: 'rescheduled', dot: false };
+    default:
+      return { label: 'Upcoming', tone: 'upcoming', dot: false };
+  }
+}
+
+/** The attendance pill for a word such as Present, Late, Absent or Not checked in yet. */
+export function attendancePill(label: string): { tone: BadgeTone; dot: true } {
+  return { tone: label === 'Present' ? 'success' : label === 'Late' ? 'warning' : label === 'Absent' ? 'danger' : 'neutral', dot: true };
 }
 
 const methodNames = { beacon: 'Beacon', nfc: 'NFC', qr: 'QR', manual: 'Manual' } as const;

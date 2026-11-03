@@ -10,6 +10,11 @@ export const WIDE_BREAKPOINT = 1024;
 
 export const useIsWide = () => useWindowDimensions().width >= WIDE_BREAKPOINT;
 
+/** From this width a page has room for two columns beside the sidebar (Home's attendance and coming up). */
+export const EXTRA_WIDE_BREAKPOINT = 1280;
+
+export const useIsExtraWide = () => useWindowDimensions().width >= EXTRA_WIDE_BREAKPOINT;
+
 export type NavGroup = 'overview' | 'account';
 export type NavItem = {
   /** The name of the tab route in src/app/(app)/(tabs). */

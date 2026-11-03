@@ -2,40 +2,55 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Card, Screen, Select, Text } from '@/components/ui';
+import { Avatar } from '@/components/avatar';
+import { ClassArtwork } from '@/components/class-artwork';
+import { ProgressRing } from '@/components/charts';
+import { EmptyState, Screen, SegmentedTabs, Text, Card } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useSchedules, useStudentOverview, type AttendanceNumbers, type ScheduleOverview } from '@/features/sessions/queries';
+import { RING_THRESHOLD } from '@/lib/ring';
 import { useAuth } from '@/providers/auth';
+import { shadows } from '@/theme/tokens';
 
-function attendanceText(numbers: AttendanceNumbers | undefined, previous: boolean) {
-  if (!numbers || numbers.attendance_pct === null) return 'No finished sessions yet';
-  return `${previous ? 'Attendance' : 'My attendance'} ${Math.round(Number(numbers.attendance_pct))}%`;
-}
+// The database's percentage for a class, or null while there are no finished sessions yet.
+const percentOf = (numbers: AttendanceNumbers | undefined) => (!numbers || numbers.attendance_pct === null ? null : Number(numbers.attendance_pct));
 
 function ClassCard({ schedule, numbers, previous }: { schedule: ScheduleOverview; numbers?: AttendanceNumbers; previous: boolean }) {
   const router = useRouter();
+  const percent = percentOf(numbers);
+  const lecturer = `${schedule.lecturer_first_name ?? ''} ${schedule.lecturer_last_name ?? ''}`.trim();
+
   return (
-    <Pressable accessibilityRole="link" accessibilityLabel={schedule.class_name} onPress={() => router.push(`/class/${schedule.schedule_id}`)}>
-      <Card>
-        <Text variant="heading">{schedule.class_name}</Text>
-        {previous ? (
-          <Text variant="muted">{schedule.period_name}</Text>
-        ) : (
-          <Text variant="muted">
-            {slotLabel(schedule.week_day, schedule.start_time, schedule.end_time)}
-            {schedule.location_name ? ` · ${schedule.location_name}` : ''}
-          </Text>
-        )}
-        <Text variant="muted">
-          {schedule.lecturer_first_name} {schedule.lecturer_last_name}
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={schedule.class_name}
+      onPress={() => router.push(`/class/${schedule.schedule_id}`)}
+      className="flex-row items-center gap-3 rounded-card bg-surface p-3 active:opacity-90"
+      style={{ boxShadow: shadows.card }}>
+      <View className="h-16 w-16 overflow-hidden rounded-block">
+        <ClassArtwork classId={schedule.class_id} />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text variant="card">{schedule.class_name}</Text>
+        <Text variant="meta">
+          {previous ? schedule.period_name : `${slotLabel(schedule.week_day, schedule.start_time, schedule.end_time)}${schedule.location_name ? ` · ${schedule.location_name}` : ''}`}
         </Text>
-        <Text variant="muted">{attendanceText(numbers, previous)}</Text>
-      </Card>
+        {lecturer ? (
+          <View className="flex-row items-center gap-1.5">
+            <Avatar name={lecturer} id={schedule.lecturer_id} size={20} />
+            <Text variant="meta">{lecturer}</Text>
+          </View>
+        ) : null}
+        {percent !== null && percent < RING_THRESHOLD ? <Text variant="error" className="font-inter-semibold">Below {RING_THRESHOLD}%</Text> : null}
+        {percent === null ? <Text variant="meta">No finished sessions yet</Text> : null}
+      </View>
+      <ProgressRing value={percent} size={52} label={previous ? 'Attendance' : 'My attendance'} />
     </Pressable>
   );
 }
 
-// Student Classes: the current period's classes, and earlier periods' classes with their final attendance.
+// Student Classes (Student UI pages 15 to 18): the current period's classes, and earlier periods' classes with their
+// final attendance, each with its percentage ring (red below 75%).
 export function StudentClasses() {
   const { claims } = useAuth();
   const [tab, setTab] = useState<'current' | 'previous'>('current');
@@ -51,11 +66,11 @@ export function StudentClasses() {
 
   return (
     <Screen title="Classes">
-      <Select
+      <SegmentedTabs
         label="Show"
         value={tab}
         options={[
-          { value: 'current', label: 'Current' },
+          { value: 'current', label: 'Active period' },
           { value: 'previous', label: 'Previous' },
         ]}
         onChange={(value) => setTab(value as 'current' | 'previous')}
@@ -64,14 +79,24 @@ export function StudentClasses() {
       {schedules.isError ? <Text variant="error">Could not load your classes.</Text> : null}
       {schedules.data && shown.length === 0 ? (
         <Card>
-          <Text variant="muted">{tab === 'current' ? 'You are not enrolled in any current classes.' : 'No previous classes.'}</Text>
+          {tab === 'current' ? (
+            <EmptyState
+              icon="classes"
+              title="No classes this period"
+              message="You're not enrolled in any classes this period yet. Check previous periods, or contact your admin if this looks wrong."
+              actionLabel="See previous periods"
+              onAction={() => setTab('previous')}
+            />
+          ) : (
+            <EmptyState icon="classes" title="No previous classes" message="Classes from earlier periods show here with your final attendance." />
+          )}
         </Card>
       ) : null}
       {groups.map((group) => {
         const [period, status] = group.split('|');
         return (
           <View key={group} className="gap-3">
-            {tab === 'current' ? <Text variant="heading">{`${period} (${status})`}</Text> : null}
+            {tab === 'current' ? <Text variant="section">{`${period} (${status})`}</Text> : null}
             {shown
               .filter((schedule) => `${schedule.period_name}|${schedule.period_status}` === group)
               .map((schedule) => (

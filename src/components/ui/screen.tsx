@@ -21,7 +21,9 @@ export function useScrollUpOn(trigger: unknown) {
 
 // `standalone` is for screens outside the tab bar (details, sign-in): the tab bar already keeps tab screens clear of
 // the gesture bar, so only these need the bottom inset. The top inset keeps the title out from under the status bar.
-export function Screen({ title, standalone = false, children }: { title: string; standalone?: boolean; children?: ReactNode }) {
+// `header` replaces the plain title when a screen draws its own (the Home greeting, the check in result). `title` is
+// still required: it names the screen.
+export function Screen({ title, standalone = false, header, children }: { title: string; standalone?: boolean; header?: ReactNode; children?: ReactNode }) {
   const insets = useSafeAreaInsets();
   const ref = useRef<ScrollViewInstance>(null);
   const scrollUp = useCallback(() => ref.current?.scrollTo({ y: 0, animated: true }), []);
@@ -33,7 +35,7 @@ export function Screen({ title, standalone = false, children }: { title: string;
         className="flex-1 bg-surface-muted"
         contentContainerClassName="mx-auto w-full max-w-3xl gap-4 px-5"
         contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: (standalone ? insets.bottom : 0) + 16 }}>
-        <Text variant="title">{title}</Text>
+        {header ?? <Text variant="title">{title}</Text>}
         {children}
       </ScrollView>
     </ScrollUpContext.Provider>
