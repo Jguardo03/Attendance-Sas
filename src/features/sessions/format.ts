@@ -50,24 +50,10 @@ export const lecturerName = (session: Pick<Session, 'lecturer_first_name' | 'lec
 
 export { formatDayLong, formatDayShort };
 
-// Labels and tones from the session state diagram. A session moved to a new time or room reads "Rescheduled"
-// until it starts; once it is live or over, the live state wins.
-export function statusBadge(status: SessionStatus): { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' } {
-  switch (status) {
-    case 'started':
-      return { label: 'Live', tone: 'success' };
-    case 'finished':
-      return { label: 'Finished', tone: 'neutral' };
-    case 'cancelled':
-      return { label: 'Cancelled', tone: 'danger' };
-    case 'rescheduled':
-      return { label: 'Rescheduled', tone: 'warning' };
-    default:
-      return { label: 'Upcoming', tone: 'neutral' };
-  }
-}
-
-/** The session pill in the mockup style: Live is solid blue with a dot, Upcoming a blue tint, and so on. */
+/**
+ * The session pill: labels from the session state diagram (a session moved to a new time or room reads "Rescheduled"
+ * until it starts; once it is live or over, the live state wins). Live is solid blue with a dot, Upcoming a blue tint.
+ */
 export function sessionPill(status: SessionStatus): { label: string; tone: BadgeTone; dot: boolean } {
   switch (status) {
     case 'started':

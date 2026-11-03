@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Button, Card, Dropdown, Text, TextField } from '@/components/ui';
+import { Icon } from '@/components/icon';
+import { Button, Card, Dropdown, EmptyState, Grid, Text, TextField } from '@/components/ui';
+import { shadows } from '@/theme/tokens';
 
 import { listRows } from '../api';
 import { rowId, type EntityDef } from '../entities';
@@ -54,25 +56,34 @@ export function EntityList({ entity }: { entity: EntityDef }) {
       {rows.isError ? <Text variant="error">Could not load {entity.label.toLowerCase()}.</Text> : null}
       {rows.data && visible.length === 0 ? (
         <Card>
-          <Text variant="muted">{rows.data.length === 0 ? `No ${entity.label.toLowerCase()} yet.` : 'Nothing matches.'}</Text>
+          <EmptyState
+            image="classes"
+            title={rows.data.length === 0 ? `No ${entity.label.toLowerCase()} yet` : 'Nothing matches'}
+            message={rows.data.length === 0 ? `No ${entity.label.toLowerCase()} yet.` : 'Nothing matches.'}
+          />
         </Card>
       ) : null}
 
-      {visible.map((row) => (
-        <Pressable
-          key={rowId(entity, row)}
-          accessibilityRole="link"
-          onPress={() => router.push(adminHref(entity.key, rowId(entity, row)))}>
-          <Card>
-            <Text variant="heading">{entity.title(row)}</Text>
-            {entity.columns.map((column) => (
-              <Text key={column.label} variant="muted">
-                {column.label}: {column.value(row)}
-              </Text>
-            ))}
-          </Card>
-        </Pressable>
-      ))}
+      <Grid>
+        {visible.map((row) => (
+          <Pressable
+            key={rowId(entity, row)}
+            accessibilityRole="link"
+            onPress={() => router.push(adminHref(entity.key, rowId(entity, row)))}
+            className="flex-row items-center gap-3 rounded-card bg-surface p-4 active:opacity-90"
+            style={{ boxShadow: shadows.card }}>
+            <View className="flex-1 gap-0.5">
+              <Text variant="card">{entity.title(row)}</Text>
+              {entity.columns.map((column) => (
+                <Text key={column.label} variant="meta">
+                  {column.label}: {column.value(row)}
+                </Text>
+              ))}
+            </View>
+            <Icon name="chevronRight" size={20} color="contentMuted" />
+          </Pressable>
+        ))}
+      </Grid>
     </View>
   );
 }

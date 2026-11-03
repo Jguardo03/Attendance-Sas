@@ -7,7 +7,7 @@ import {
   checkedInAt,
   methodLabel,
   slotLabel,
-  statusBadge,
+  sessionPill,
   type MyAttendance,
   type Session,
 } from '@/features/sessions/format';
@@ -80,11 +80,11 @@ describe('check in button states', () => {
 
 describe('labels', () => {
   it('names the session status as in the state diagram', () => {
-    expect(statusBadge('scheduled')).toEqual({ label: 'Upcoming', tone: 'neutral' });
-    expect(statusBadge('rescheduled').label).toBe('Rescheduled');
-    expect(statusBadge('started')).toEqual({ label: 'Live', tone: 'success' });
-    expect(statusBadge('finished').label).toBe('Finished');
-    expect(statusBadge('cancelled')).toEqual({ label: 'Cancelled', tone: 'danger' });
+    expect(sessionPill('scheduled').label).toBe('Upcoming');
+    expect(sessionPill('rescheduled').label).toBe('Rescheduled');
+    expect(sessionPill('started').label).toBe('Live');
+    expect(sessionPill('finished').label).toBe('Finished');
+    expect(sessionPill('cancelled').label).toBe('Cancelled');
   });
 
   it('reports attendance for a finished session: no row means absent', () => {

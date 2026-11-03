@@ -387,6 +387,20 @@ Do not alter `change_attendance` payloads, the realtime hook or the focus refetc
 
 Do not touch entity definitions, validation or database error mapping; forms keep their field names and labels used by tests.
 
+### Phase 7 results (done 2026-11-04)
+
+- **Rebuilt, with entity definitions, validation, database error mapping, queries and routes unchanged:**
+  - **Today:** date and "Today" header, five stat tiles (Live now in blue, Rescheduled or cancelled in amber), a class name search, the Filters panel with each active filter as a removable chip (plus "Clear filters (N)"), "Each listed once", cards with a status pill, progress bar and lecturer, in a 1, 2 or 3 column grid.
+  - **Calendar:** the same week strip as everyone else with the session count under each day, search, filters, cards.
+  - **Classes:** search, filters, cards with lecturer avatar, enrolment, "N below 75%" and the class average ring. Class details and Session are the shared screens from Phase 6.
+  - **Admin hub:** one white card of icon rows with chevrons (`ListRow`), plus Attendance reports.
+  - **CRUD:** list rows with chevrons and an empty state; details as label/value rows; round back button header; location picker as radio cards with Free / Booked / Selected pills; the error is now the shared `Banner` (red, title, message, "Conflicts with", the action and Dismiss). Scroll to top on an error is unchanged.
+  - **Reports (an assumption, not in the mockups):** By student | By lecturer | By class tabs, white cards with percentage pills, Export CSV as a secondary button.
+- **Cleanup:** `statusBadge` and the local status map in `schedule-extras.tsx` are gone (everything uses `sessionPill`).
+- **Tests:** 3 new in `admin-screens.test.tsx` (the error banner shows the mapped title, message, conflict and both actions; class search; filter chips). 294 in total; typecheck and lint pass.
+- **Verified:** web at 1440 px as the demo admin: Today, Calendar, Hub, Schedules list, the Add schedule form with its "Check the details" banner (scrolls up, nothing saved), Reports.
+- **Not done or not verified:** the Android emulator and phone widths; creating, editing and deleting a location, role and schedule and the booked-location banner against the real database (the error component is covered by a test, the saves were not run); day chips (M T W) and the beacon "move" confirmation, and the wide two pane list plus form layout from the mockups (forms still use the existing fields and the single column); the Admin profile "Access" list; the Periods status tabs.
+
 ---
 
 ## Phase 8: States, accessibility and polish

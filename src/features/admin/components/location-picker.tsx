@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Checkbox, Text } from '@/components/ui';
+import { Badge, Checkbox, Text } from '@/components/ui';
 
 import { listAvailability } from '../api';
 import type { FormValues } from '../form';
@@ -49,7 +49,7 @@ export function LocationPicker({
 
   return (
     <View className="gap-2" accessibilityRole="radiogroup" accessibilityLabel="Location">
-      <Text variant="muted">Location *</Text>
+      <Text variant="meta" className="font-inter-medium">Location *</Text>
       {!ready ? <Text variant="muted">Choose the period, day and times to see which locations are free.</Text> : null}
       {ready && availability.isPending ? <Text variant="muted">Checking locations...</Text> : null}
       {ready && availability.isError ? <Text variant="error">Could not check availability.</Text> : null}
@@ -64,9 +64,9 @@ export function LocationPicker({
             accessibilityState={{ selected, disabled: booked }}
             disabled={booked}
             onPress={() => onChange(String(row.location_id))}
-            className={`flex-row items-center justify-between rounded-md border px-3 py-3 ${selected ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}>
-            <Text className={booked ? 'text-content-muted' : ''}>{row.location_name}</Text>
-            <Text variant="muted">{booked ? `Booked: ${row.booked_class}` : selected ? 'Selected' : 'Free'}</Text>
+            className={`min-h-14 flex-row items-center justify-between gap-2 rounded-block border px-3 py-2 active:opacity-80 ${selected ? 'border-primary bg-primary-tint' : 'border-border bg-surface'}`}>
+            <Text className={`flex-1 ${booked ? 'text-content-muted' : ''}`}>{row.location_name}</Text>
+            {booked ? <Badge label={`Booked: ${row.booked_class}`} tone="neutral" /> : <Badge label={selected ? 'Selected' : 'Free'} tone={selected ? 'upcoming' : 'success'} />}
           </Pressable>
         );
       })}

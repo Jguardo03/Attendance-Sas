@@ -1,5 +1,5 @@
 // Numbers and labels for the lecturer and admin screens. Pure, so they can be tested without a database.
-import { hhmm, statusBadge, type Session } from './format';
+import { hhmm, sessionPill, type Session } from './format';
 
 export type SessionCounts = { enrolled: number; present: number; late: number };
 
@@ -38,11 +38,13 @@ export const lecturerLabel = (session: Pick<Session, 'lecturer_first_name' | 'le
   `${session.lecturer_first_name ?? ''} ${session.lecturer_last_name ?? ''}`.trim();
 
 /** The status words shown in the filter: the same labels the badges use. */
-export const statusLabel = (session: Pick<Session, 'status'>) => statusBadge(session.status).label;
+export const statusLabel = (session: Pick<Session, 'status'>) => sessionPill(session.status).label;
 
-export function filterSessions(sessions: Session[], filters: SessionFilterValues): Session[] {
+export function filterSessions(sessions: Session[], filters: SessionFilterValues, search = ''): Session[] {
+  const needle = search.trim().toLowerCase();
   return sessions.filter(
     (session) =>
+      (!needle || session.class_name.toLowerCase().includes(needle)) &&
       (!filters.class_name || session.class_name === filters.class_name) &&
       (!filters.lecturer || lecturerLabel(session) === filters.lecturer) &&
       (!filters.location_name || session.location_name === filters.location_name) &&

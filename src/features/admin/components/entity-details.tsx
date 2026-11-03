@@ -15,6 +15,15 @@ import { LocationExtras, TagExtras } from './location-extras';
 import { ScheduleExtras } from './schedule-extras';
 import { adminHref } from '../routes';
 
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-start justify-between gap-3">
+      <Text variant="meta">{label}</Text>
+      <Text className="flex-1 text-right">{value}</Text>
+    </View>
+  );
+}
+
 // Everything about one row, with Edit and Delete (with confirm). Roles and users also list their
 // permissions and overrides.
 export function EntityDetails({ entity, id }: { entity: EntityDef; id: string }) {
@@ -80,20 +89,16 @@ export function EntityDetails({ entity, id }: { entity: EntityDef; id: string })
 
       <Card title={entity.title(data)}>
         {shown.map((field) => (
-          <Text key={field.name} variant="muted">
-            {field.label}: {String(data[field.name] ?? '')}
-          </Text>
+          <Row key={field.name} label={field.label} value={String(data[field.name] ?? '')} />
         ))}
         {entity.readOnly?.map((item) => (
-          <Text key={item.label} variant="muted">
-            {item.label}: {item.value(data)}
-          </Text>
+          <Row key={item.label} label={item.label} value={item.value(data)} />
         ))}
       </Card>
 
       {entity.key === 'roles' ? (
         <Card title={`Permissions (${rolePermissions.length})`}>
-          {rolePermissions.length === 0 ? <Text variant="muted">None.</Text> : null}
+          {rolePermissions.length === 0 ? <Text variant="meta">None.</Text> : null}
           {rolePermissions.map((permissionId) => (
             <Text key={permissionId}>{permissionName(permissionId)}</Text>
           ))}

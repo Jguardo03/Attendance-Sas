@@ -2,9 +2,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Badge, Button, Card, Collapsible, Dropdown, Screen, Select, Text } from '@/components/ui';
+import { Badge, Button, Card, Collapsible, Dropdown, EmptyState, Grid, Screen, ScreenHeader, SegmentedTabs, Text } from '@/components/ui';
 import { useSchedules } from '@/features/sessions/queries';
 import { useAuth } from '@/providers/auth';
+import { shadows } from '@/theme/tokens';
 
 import { exportCsv } from './export';
 import { useClassReport, useLecturerReport, useStudentReport, type ReportFilters } from './queries';
@@ -24,6 +25,9 @@ const unique = (pairs: { value: string; label: string }[]) => {
 };
 
 const tone = (value: number | string | null) => (value === null ? 'neutral' : isBelow(value) ? 'danger' : 'success');
+
+// A report row: a tappable white card (rows without a destination are plain).
+const rowClass = 'gap-1 rounded-card bg-surface p-4 active:opacity-90';
 
 // Attendance reports for administrators: by student (every class, % per class), by lecturer (classes, sessions held,
 // average attendance) and by class. Filters for period, class and lecturer; students can also be filtered by standing.
@@ -86,9 +90,8 @@ export function ReportsScreen() {
   };
 
   return (
-    <Screen standalone title="Reports">
-      <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
-      <Select label="Report" value={view} options={views} onChange={reset((value: string) => setView(value as ReportView))} />
+    <Screen standalone title="Reports" header={<ScreenHeader title="Reports" subtitle="Attendance by student, lecturer or class" onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}>
+      <SegmentedTabs label="Report" value={view} options={views} onChange={reset((value: string) => setView(value as ReportView))} />
 
       <Collapsible title={activeFilters > 0 ? `Filters (${activeFilters})` : 'Filters'}>
         <Dropdown label="Period" value={periodValue} options={[{ value: '', label: 'All' }, ...unique(all.map((s) => ({ value: String(s.academic_period_id), label: s.period_name })))]} onChange={reset(setPeriod)} />
@@ -110,76 +113,76 @@ export function ReportsScreen() {
         />
       ) : null}
 
-      <Text variant="heading">{`${count} ${view === 'students' ? 'student rows' : view === 'lecturers' ? 'lecturers' : 'classes'}`}</Text>
-      {view === 'students' ? <Text variant="muted">One row per student per class. Only finished sessions count; no check in means absent.</Text> : null}
-      <Button label="Export CSV" disabled={count === 0} onPress={download} />
+      <Text variant="section">{`${count} ${view === 'students' ? 'student rows' : view === 'lecturers' ? 'lecturers' : 'classes'}`}</Text>
+      {view === 'students' ? <Text variant="meta">One row per student per class. Only finished sessions count; no check in means absent.</Text> : null}
+      <Button variant="secondary" icon="download" label="Export CSV" disabled={count === 0} onPress={download} />
       {failure ? <Text variant="error">{failure}</Text> : null}
 
       {schedules.isPending || active.isPending ? <Text variant="muted">Loading...</Text> : null}
       {active.isError ? <Text variant="error">The report could not be loaded. Try again.</Text> : null}
       {active.data && count === 0 ? (
         <Card>
-          <Text variant="muted">Nothing matches these filters.</Text>
+          <EmptyState image="classes" title="Nothing matches" message="Nothing matches these filters." />
         </Card>
       ) : null}
 
-      <View className="gap-3">
+      <Grid>
         {view === 'students'
           ? studentRows.slice(0, limit).map((row) => (
-              <Pressable key={`${row.student_id}-${row.schedule_id}`} accessibilityRole="link" accessibilityLabel={`${row.first_name} ${row.last_name} ${row.class_name}`} onPress={() => router.push(`/student/${row.student_id}?schedule=${row.schedule_id}`)}>
-                <Card>
+              <Pressable key={`${row.student_id}-${row.schedule_id}`} accessibilityRole="link" accessibilityLabel={`${row.first_name} ${row.last_name} ${row.class_name}`} onPress={() => router.push(`/student/${row.student_id}?schedule=${row.schedule_id}`)} className={rowClass} style={{ boxShadow: shadows.card }}>
+                <>
                   <View className="flex-row items-center justify-between gap-2">
-                    <Text variant="heading" className="flex-1">
+                    <Text variant="card" className="flex-1">
                       {row.first_name} {row.last_name}
                     </Text>
-                    <Badge label={pctText(row.attendance_pct)} tone={tone(row.attendance_pct)} />
+                    <Badge label={pctText(row.attendance_pct)} tone={tone(row.attendance_pct)} dot />
                   </View>
-                  <Text variant="muted">
+                  <Text variant="meta">
                     {row.student_id} · {row.class_name} · {row.lecturer_name}
                   </Text>
-                  <Text variant="muted">
+                  <Text variant="meta">
                     {row.finished_sessions === 0 ? 'No finished sessions yet' : `${row.present} present · ${row.late} late · ${row.absent} absent of ${row.finished_sessions}`}
                   </Text>
-                </Card>
+                </>
               </Pressable>
             ))
           : null}
         {view === 'classes'
           ? (classes.data ?? []).slice(0, limit).map((row) => (
-              <Pressable key={row.schedule_id} accessibilityRole="link" accessibilityLabel={row.class_name} onPress={() => router.push(`/class/${row.schedule_id}`)}>
-                <Card>
+              <Pressable key={row.schedule_id} accessibilityRole="link" accessibilityLabel={row.class_name} onPress={() => router.push(`/class/${row.schedule_id}`)} className={rowClass} style={{ boxShadow: shadows.card }}>
+                <>
                   <View className="flex-row items-center justify-between gap-2">
-                    <Text variant="heading" className="flex-1">
+                    <Text variant="card" className="flex-1">
                       {row.class_name}
                     </Text>
-                    <Badge label={pctText(row.class_average_pct)} tone={tone(row.class_average_pct)} />
+                    <Badge label={pctText(row.class_average_pct)} tone={tone(row.class_average_pct)} dot />
                   </View>
-                  <Text variant="muted">
+                  <Text variant="meta">
                     {row.period_name} · {row.lecturer_name}
                   </Text>
-                  <Text variant="muted">
+                  <Text variant="meta">
                     {row.enrolled} enrolled · {row.finished_sessions} sessions held · {row.students_below_75} below 75%
                   </Text>
-                </Card>
+                </>
               </Pressable>
             ))
           : null}
         {view === 'lecturers'
           ? (lecturers.data ?? []).slice(0, limit).map((row) => (
-              <Card key={row.lecturer_id}>
+              <View key={row.lecturer_id} className={rowClass} style={{ boxShadow: shadows.card }}>
                 <View className="flex-row items-center justify-between gap-2">
-                  <Text variant="heading" className="flex-1">
+                  <Text variant="card" className="flex-1">
                     {row.lecturer_name}
                   </Text>
-                  <Badge label={pctText(row.average_attendance_pct)} tone={tone(row.average_attendance_pct)} />
+                  <Badge label={pctText(row.average_attendance_pct)} tone={tone(row.average_attendance_pct)} dot />
                 </View>
-                <Text variant="muted">
+                <Text variant="meta">
                   {row.lecturer_id} · {row.classes} class{Number(row.classes) === 1 ? '' : 'es'} · {row.sessions_held} sessions held
                 </Text>
-              </Card>
+              </View>
             ))
           : null}
-      </View>
+      </Grid>
       {count > limit ? <Button variant="secondary" label={`Show ${Math.min(PAGE, count - limit)} more`} onPress={() => setLimit((current) => current + PAGE)} /> : null}
     </Screen>
   );

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Badge, Button, Card, Collapsible, Select, Text, TextField } from '@/components/ui';
+import { sessionPill } from '@/features/sessions/format';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
 import { db, listOptions } from '../api';
@@ -10,15 +11,6 @@ import { hhmm, type Row } from '../entities';
 import { CrudError } from './crud-error';
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-// Status words and tones from the session state diagram.
-const statusBadge: Record<string, { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' }> = {
-  scheduled: { label: 'Upcoming', tone: 'neutral' },
-  started: { label: 'Live', tone: 'success' },
-  finished: { label: 'Finished', tone: 'neutral' },
-  rescheduled: { label: 'Rescheduled', tone: 'warning' },
-  cancelled: { label: 'Cancelled', tone: 'danger' },
-};
 
 function useFailure() {
   const [failure, setFailure] = useState<FriendlyError | null>(null);
@@ -64,7 +56,7 @@ function SessionRow({ session, schedule, onChanged }: { session: Row; schedule: 
     });
   }
 
-  const badge = statusBadge[session.status] ?? statusBadge.scheduled;
+  const badge = sessionPill(session.status);
   const start_ = hhmm(session.override_start_time ?? schedule.start_time);
   const end_ = hhmm(session.override_end_time ?? schedule.end_time);
   const room = session.override_location?.name ?? schedule.location?.name;
@@ -73,7 +65,7 @@ function SessionRow({ session, schedule, onChanged }: { session: Row; schedule: 
     <View className="gap-2 border-t border-border pt-3">
       <View className="flex-row items-center justify-between gap-2">
         <Text>{session.session_date}</Text>
-        <Badge label={badge.label} tone={badge.tone} />
+        <Badge label={badge.label} tone={badge.tone} dot={badge.dot} />
       </View>
       <Text variant="muted">
         {start_} to {end_}, {room}

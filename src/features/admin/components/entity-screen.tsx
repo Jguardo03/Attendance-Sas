@@ -1,7 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 
-import { Button, Screen } from '@/components/ui';
+import { Screen, ScreenHeader } from '@/components/ui';
 import { useAuth } from '@/providers/auth';
 
 import { findEntity, type EntityDef } from '../entities';
@@ -26,8 +26,7 @@ export function EntityScreen({
   const back = backTo(entity);
 
   return (
-    <Screen title={title(entity)}>
-      <Button variant="secondary" label={back.label} onPress={() => router.navigate(back.href)} />
+    <Screen title={title(entity)} header={<ScreenHeader title={title(entity)} subtitle={back.label} onBack={() => router.navigate(back.href)} />}>
       {children(entity, id)}
     </Screen>
   );
