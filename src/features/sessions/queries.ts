@@ -14,6 +14,7 @@ function client() {
 
 const sessionColumns = '*';
 const MINUTE = 60_000;
+const LIVE_POLL = 10_000;
 
 export type ScheduleOverview = {
   schedule_id: number;
@@ -259,12 +260,12 @@ export type AttendanceListRow = {
   check_in_method: 'beacon' | 'nfc' | 'qr' | 'manual' | null;
 };
 
-/** Every enrolled student with their attendance row for one session. */
-export function useAttendanceList(sessionId: number, enabled = true) {
+/** Every enrolled student with their attendance row for one session. `live` (check in is open) polls every 10 seconds. */
+export function useAttendanceList(sessionId: number, enabled = true, live = false) {
   return useQuery({
     queryKey: ['sessions', 'attendance-list', sessionId],
     enabled,
-    refetchInterval: MINUTE,
+    refetchInterval: live ? LIVE_POLL : MINUTE,
     queryFn: async () => {
       const { data, error } = await client().rpc('session_attendance_list', { p_session_id: sessionId });
       if (error) throw error;

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { Badge, Card, Dropdown, Text, TextField } from '@/components/ui';
@@ -20,9 +21,20 @@ const tone = (status: AttendeeStatus) => (status === 'Present' ? 'success' : sta
 // The lecturer's and admin's view of one session: the counts and every enrolled student with their status.
 // Read-only for now; correcting a record comes with the attendance editing phase.
 export function TeachingSessionPanel({ session }: { session: Session }) {
-  const list = useAttendanceList(session.session_id);
+  const checkInOpen = session.status !== 'cancelled' && session.status !== 'finished' && session.now_local >= session.check_in_opens_at;
+  const list = useAttendanceList(session.session_id, true, checkInOpen);
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
+
+  // This screen stays mounted under the room QR page, so coming back to it refetches the list at once.
+  const { refetch } = list;
+  const focused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (focused.current) void refetch();
+      focused.current = true;
+    }, [refetch]),
+  );
 
   const rows = (list.data ?? []).map((row) => ({ row, status: attendeeStatus(session, row) }));
   const count = (wanted: AttendeeStatus) => rows.filter((item) => item.status === wanted).length;
