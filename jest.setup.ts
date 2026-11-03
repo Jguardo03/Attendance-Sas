@@ -10,6 +10,8 @@ jest.mock('@react-native-community/netinfo', () => ({
   },
 }));
 
+jest.mock('expo-symbols', () => require('./jest/expo-symbols'));
+
 // Stop TanStack Query's garbage-collection timers so Jest can exit cleanly.
 afterEach(() => {
   require('@/lib/query-client').queryClient.clear();

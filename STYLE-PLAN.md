@@ -176,6 +176,14 @@ Mockup pages: Student UI 1, 9, 16, 20 (rings and artwork), Lecturer 10 (ring ban
 
 No `@expo/vector-icons`; no plain-string `SymbolView` names; no `fill-current`; no remote images.
 
+### Phase 2 results (done 2026-11-03)
+
+- **Built:** `src/components/icon.tsx` (`Icon` and a typed registry of 41 icons, each with an iOS SF Symbol name and a Material Symbol name for Android and web; the Bluetooth icon uses a radio-waves symbol on iOS because SF Symbols has no Bluetooth glyph), `app-mark.tsx` (the tick and beacon in `tile`, `plain` and `brand` variants, drawn like the icon file), `class-artwork.tsx` (four patterns on cream, `artworkIndex(classId)` = id mod 4, cropped not stretched), `charts.tsx` (`ProgressRing`, `BreakdownRing`, `ProgressBar`), `avatar.tsx` (five tints, each text colour contrast-checked), `src/lib/ring.ts` and `src/lib/initials.ts` (pure logic), the dev gallery `src/features/dev/ui-gallery.tsx` at `/dev/ui` (only registered when `__DEV__`, opened from Profile with "Dev: UI gallery").
+- **Tests:** 20 new (registry names exist in the Material font table, tint and platform names, hidden-versus-labelled icons, ring tones at 74/75/100, arc and segment maths, bar clamping, initials and avatar colours, gallery shows every colour, icon and pattern). `expo-symbols` is mocked for Jest in `jest/expo-symbols.tsx`.
+- **Found while verifying:** (1) on web, `react-native-svg` passes unknown props such as `accessible` to the page, which React warns about, so accessibility props sit on a wrapping `View` and decorative icons use `aria-hidden`; (2) "100%" did not fit the 56 px ring, so three-digit values use a smaller number; (3) Metro's file watcher on this machine sometimes serves a stale route chunk to the emulator after an edit (the new Profile button did not appear until Metro was restarted with `--clear`), and the web dev server's static render graph goes stale after edits ("Requiring unknown module"); both are fixed by a clean restart.
+- **Verified:** Android emulator in Expo Go (all sections of the gallery) and web (icons via the Material Symbols font, charts, avatars). 195 tests, typecheck and lint pass.
+- **Not verified:** iOS (SF Symbol names are type-checked against the installed list, not seen on a device). The artwork patterns are my reading of the mockup (rings, bars and circles in the four brand colours), so compare them with the mockup cards and say if a pattern should change.
+
 ---
 
 ## Phase 3: Restyle the shared UI kit

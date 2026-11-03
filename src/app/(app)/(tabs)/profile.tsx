@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -8,6 +9,7 @@ import { useAuth } from '@/providers/auth';
 
 export default function ProfileScreen() {
   const { claims, signOut } = useAuth();
+  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const appUserId = claims?.appUserId;
 
@@ -51,6 +53,7 @@ export default function ProfileScreen() {
       ) : (
         <Button variant="secondary" label="Sign out" onPress={() => setConfirming(true)} />
       )}
+      {__DEV__ ? <Button variant="secondary" label="Dev: UI gallery" onPress={() => router.push('/dev/ui')} /> : null}
     </Screen>
   );
 }
