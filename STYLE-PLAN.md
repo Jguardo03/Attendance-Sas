@@ -1,4 +1,4 @@
-# Style plan: apply the mockups to Attendance SAS
+ # Style plan: apply the mockups to Attendance SAS
 
 Source: the three PDFs in `docs/Mockups/` (`Mockups Student UI.pdf` 42 pages, `Mockups Student Lecturer.pdf` 27 pages, `Mockups Admin UI.pdf` 29 pages). Pages alternate: odd pages are the desktop web layout, even pages the phone layout. Student UI page 1 is the style sheet. Written 2026-11-03. Phases 0 to 10 of `PLAN.md` are built as an unstyled prototype; this plan only changes how it looks, never what it does.
 
@@ -455,6 +455,21 @@ No animation that blocks check in; no information conveyed by colour alone.
 4. Behaviour review as the three demo accounts: sign in with a code, student check in, lecturer manual check in and change, admin create, edit and report export.
 5. `npx expo-doctor`, `npm run build:web` and a Netlify deploy preview open and load Inter, the artwork and the icons.
 6. Update `PLAN.md` with a short "Styling" section pointing here, and commit by phase.
+
+### Phase 9 results (done 2026-11-04)
+
+- **Checks:** `tsc` and `expo lint` clean; 299 tests in 23 suites pass; `npm run build:web` exports all routes. The anti-pattern greps find nothing: the only hex values outside `tokens.ts` and `qr-code.tsx` are in `theme.test.ts` (which checks the tokens), and the only `font-bold` is inside a comment in `text.tsx`.
+- **Production build:** served `dist/` and signed in as the demo student with a real emailed code. Home loads Inter, the class artwork, the symbol icons and the "Attendancely" title, with the bottom tab bar at 390 px and the sidebar and two columns at 1280 px (after a reload).
+- **`expo-doctor`:** 19 of 20 pass. The one failure is 13 packages a patch version behind the SDK 58 set (for example `expo-router` 58.0.30 against 58.0.26 expected). Not changed here; `npx expo install --fix` would do it.
+- **Visual review:** every screen was checked against its mockup in the phase that restyled it (Phases 3 to 8, on web at phone and desktop widths). This phase re-checked only the student Home on the production build. A full one-screenshot-per-screen-per-role pass at 390 and 1280 px was not repeated.
+- **Not done:**
+  - Android emulator pass for the ten main screens: last done in Phase 5, not repeated for Phases 6 to 8.
+  - Netlify deploy preview: needs the commits pushed first.
+  - Behaviour as lecturer and admin on the production build (manual check-in, change attendance, create/edit/delete, report export). Those flows have tests, and the lecturer and admin screens were checked on the dev server in Phases 6 and 7, but saves were not run against the database.
+  - Mockup items still not built: day chips (M T W) in the schedule form, the beacon "move closer" confirmation, the wide list-plus-form two-pane, the admin Profile "Access" list, Period status tabs.
+- **Found, not fixed:**
+  - The sign-in email subject still reads "Your Attendance SAS sign-in code" while the sender name is Attendancely. It comes from the Supabase auth email template, not the app code, so it needs changing in the Supabase dashboard.
+  - Known review items: Home briefly shows "No sessions today" before the schedules load; the session card's button sits inside a link-role pressable; the disabled check-in button label is lower-cased; the calendar chip reads "1 sessions".
 
 ---
 

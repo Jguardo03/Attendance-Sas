@@ -691,6 +691,12 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 
 ---
 
+## Styling
+
+The Attendancely visual design (tokens, UI kit, every student, lecturer and admin screen, empty states, loading and web polish) was applied in nine phases from the mockups in `docs/Mockups`. The plan, decisions, per-phase results and what is still open are in `STYLE-PLAN.md`.
+
+---
+
 ## Deferred (not in this plan)
 
-Visual design and design system (hooks exist: tokens plus `components/ui`), LMS integrations (Canvas, Moodle), grading and document records, buying/installing room equipment, push notifications, offline check-in queue, CSV import of users and enrolments, analytics dashboards beyond Phase 10, multi-institution tenancy.
+LMS integrations (Canvas, Moodle), grading and document records, buying/installing room equipment, push notifications, offline check-in queue, CSV import of users and enrolments, analytics dashboards beyond Phase 10, multi-institution tenancy.
