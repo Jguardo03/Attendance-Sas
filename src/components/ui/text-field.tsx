@@ -12,7 +12,7 @@ export function TextField({
       <Text variant="muted">{label}</Text>
       <TextInput
         accessibilityLabel={label}
-        className="rounded-md border border-border bg-surface px-3 py-3 text-base text-content"
+        className="rounded-md border border-border bg-surface px-3 py-3 font-inter text-base text-content"
         {...props}
       />
       {error ? <Text variant="error">{error}</Text> : null}

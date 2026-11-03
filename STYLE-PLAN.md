@@ -134,6 +134,16 @@ Style sheet: Student UI page 1. Fonts: docs.expo.dev/develop/user-interface/font
 
 No `font-bold` on Inter text; no dark-mode values; no screen files touched in this phase.
 
+### Phase 1 results (done 2026-11-03)
+
+- **Built:** `src/theme/tokens.ts` (colours, radii, spacing, card shadow, type scale), `src/global.css` and `tailwind.config.js` (19 colour tokens, radii `rounded-card/block/button`, Inter families `font-inter`, `-medium`, `-semibold`, `-bold`, six type sizes `text-title` ... `text-label`), `src/theme/navigation-theme.ts` (`ThemeProvider` from `expo-router`, Inter in the theme fonts), Inter loaded with `useFonts` in `src/app/_layout.tsx` with the splash screen held, `Text` and `TextField` now use the Inter families (sizes unchanged until Phase 3), `app.json` (name Attendancely, `userInterfaceStyle: light`, splash and adaptive icon background `#015C93`, splash image width 200, the iOS Expo icon bundle removed so `icon.png` is used), the new icon files checked (all use exactly `#015C93`), README and the email template subject renamed.
+- **Packages added:** `@expo-google-fonts/inter`, `expo-linear-gradient` (both with `npx expo install`).
+- **Added beyond the plan:** `danger-strong` `#B03A48` for small red text (the mockup red is 4.49:1 on the canvas and 4.13:1 on its tint), used by `Text variant="error"`. Muted text must not sit on the primary tint (4.43:1).
+- **Spikes settled:** (1) `boxShadow` renders the soft card shadow on the Android emulator, and `react-native-web` passes the string straight to CSS; (2) `bg-primary/10` and `bg-success/15` do render on native but blend with what is behind them and come out greyer than the named tints, so Phase 3 uses the tint tokens; (3) `ThemeProvider value={...}` takes a `Theme` with `dark`, `colors` (primary, background, card, text, border, notification) and `fonts`, confirmed in the installed types; (4) the Inter export names `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold`, `Inter_700Bold` exist; (5) the pill tints `227 242 235`, `254 243 204`, `248 233 234` look right on screen; (6) `expo-linear-gradient` and the four Inter weights render on Android.
+- **Verified:** web (sign-in heading is `Inter_700Bold` 24 px in `#101828`, canvas `#F4F6FA`), Android emulator in Expo Go (fonts, shadow, tints, radii, gradient). 175 tests, typecheck and lint pass.
+- **Not verified:** the new app icon, splash screen and app name on a real build (Expo Go ignores them; they need a development build). The browser tab title is still empty (set in Phase 4).
+- **Notes for later phases:** input borders (`#E4E7EC`, 1.24:1 on white) follow the mockup and are decorative; the focus ring in Phase 3 must carry the 3:1 contrast. The dev server's typed-route file sometimes comes out stale after a restart; a clean restart of `web-dev` fixes it.
+
 ---
 
 ## Phase 2: Icons, app mark, class artwork and charts
