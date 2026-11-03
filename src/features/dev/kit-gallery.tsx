@@ -165,7 +165,7 @@ export function KitGallery() {
       </Card>
 
       <Card title="Empty state">
-        <EmptyState icon="calendar" title="No sessions today" message="Enjoy the free time. Your next session is Mon 26 Oct at 09:00." actionLabel="Open calendar" onAction={() => undefined} />
+        <EmptyState image="calendar" title="No sessions today" message="Enjoy the free time. Your next session is Mon 26 Oct at 09:00." actionLabel="Open calendar" onAction={() => undefined} />
       </Card>
     </View>
   );

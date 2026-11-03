@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
-import { Button, Card, EmptyState, Screen, Text } from '@/components/ui';
+import { Button, Card, EmptyState, Grid, Screen, Text } from '@/components/ui';
 import { addDays, formatDayLong, formatDayShort, startOfWeek, weekdayInitials } from '@/lib/dates';
 import { useAuth } from '@/providers/auth';
 
@@ -97,12 +97,14 @@ export function WeekCalendar() {
       ) : null}
       {sessions.data && forDay.length === 0 ? (
         <Card>
-          <EmptyState icon="calendar" title="No sessions" message="Nothing is scheduled for this day." />
+          <EmptyState image="calendar" title="No sessions" message="Nothing is scheduled for this day." />
         </Card>
       ) : null}
-      {forDay.map((session) => (
-        <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance={isStudent} />
-      ))}
+      <Grid>
+        {forDay.map((session) => (
+          <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance={isStudent} />
+        ))}
+      </Grid>
     </Screen>
   );
 }

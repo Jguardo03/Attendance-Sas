@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { ClassArtwork } from '@/components/class-artwork';
 import { ProgressRing } from '@/components/charts';
-import { EmptyState, Screen, SegmentedTabs, Text, Card } from '@/components/ui';
+import { EmptyState, Grid, Screen, SegmentedTabs, Text, Card } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useSchedules, useStudentOverview, type AttendanceNumbers, type ScheduleOverview } from '@/features/sessions/queries';
 import { RING_THRESHOLD } from '@/lib/ring';
@@ -81,14 +81,14 @@ export function StudentClasses() {
         <Card>
           {tab === 'current' ? (
             <EmptyState
-              icon="classes"
+              image="classes"
               title="No classes this period"
               message="You're not enrolled in any classes this period yet. Check previous periods, or contact your admin if this looks wrong."
               actionLabel="See previous periods"
               onAction={() => setTab('previous')}
             />
           ) : (
-            <EmptyState icon="classes" title="No previous classes" message="Classes from earlier periods show here with your final attendance." />
+            <EmptyState image="classes" title="No previous classes" message="Classes from earlier periods show here with your final attendance." />
           )}
         </Card>
       ) : null}
@@ -97,11 +97,13 @@ export function StudentClasses() {
         return (
           <View key={group} className="gap-3">
             {tab === 'current' ? <Text variant="section">{`${period} (${status})`}</Text> : null}
-            {shown
-              .filter((schedule) => `${schedule.period_name}|${schedule.period_status}` === group)
-              .map((schedule) => (
-                <ClassCard key={schedule.schedule_id} schedule={schedule} numbers={numbers.data?.get(schedule.schedule_id)} previous={tab === 'previous'} />
-              ))}
+            <Grid>
+              {shown
+                .filter((schedule) => `${schedule.period_name}|${schedule.period_status}` === group)
+                .map((schedule) => (
+                  <ClassCard key={schedule.schedule_id} schedule={schedule} numbers={numbers.data?.get(schedule.schedule_id)} previous={tab === 'previous'} />
+                ))}
+            </Grid>
           </View>
         );
       })}

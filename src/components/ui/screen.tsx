@@ -33,7 +33,7 @@ export function Screen({ title, standalone = false, header, children }: { title:
       <ScrollView
         ref={ref}
         className="flex-1 bg-surface-muted"
-        contentContainerClassName="mx-auto w-full max-w-3xl gap-4 px-5"
+        contentContainerClassName="w-full gap-4 px-5 md:px-8"
         contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: (standalone ? insets.bottom : 0) + 16 }}>
         {header ?? <Text variant="title">{title}</Text>}
         {children}

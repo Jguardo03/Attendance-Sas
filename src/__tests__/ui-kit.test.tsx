@@ -224,7 +224,7 @@ describe('Banner', () => {
 describe('EmptyState', () => {
   it('shows one title, one line and one action', async () => {
     const onAction = jest.fn();
-    await render(<EmptyState icon="calendar" title="No sessions today" message="Enjoy the free time." actionLabel="Open calendar" onAction={onAction} />);
+    await render(<EmptyState image="calendar" title="No sessions today" message="Enjoy the free time." actionLabel="Open calendar" onAction={onAction} />);
     expect(screen.getByText('No sessions today')).toBeTruthy();
     expect(screen.getByText('Enjoy the free time.')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Open calendar' }));
@@ -232,7 +232,7 @@ describe('EmptyState', () => {
   });
 
   it('leaves out the action when none is given', async () => {
-    await render(<EmptyState icon="classes" title="No classes" message="Nothing here yet." />);
+    await render(<EmptyState image="classes" title="No classes" message="Nothing here yet." />);
     expect(screen.queryByRole('button')).toBeNull();
   });
 });

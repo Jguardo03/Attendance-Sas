@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-import { Badge, Button, Card, EmptyState, Screen, Text } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Grid, Screen, Text, useColumns } from '@/components/ui';
 import { markCheckInStart } from '@/features/check-in/timing';
 import { SessionCard } from '@/features/sessions/components/session-card';
 import { UpcomingRow } from '@/features/sessions/components/upcoming-row';
@@ -14,11 +14,14 @@ import { useAuth } from '@/providers/auth';
 
 import { AttendanceSummary } from './attendance-summary';
 
+const banner = require('../../../assets/images/Artboard Banner.png');
+
 // Student Home (Student UI pages 9 to 14): a greeting, the session that is live now with the Check in button,
 // today's sessions, "My attendance" and what is coming up. On a very wide screen the last two sit in a column on the right.
 export function StudentHome() {
   const router = useRouter();
   const wide = useIsExtraWide();
+  const columns = useColumns();
   const { claims } = useAuth();
   const profile = useMyProfile();
   const now = useAppNow();
@@ -57,25 +60,30 @@ export function StudentHome() {
 
   const hero =
     live && liveState ? (
-      <Card variant="hero">
+      <Card variant="hero" image={banner}>
         <View className="flex-row">
           <Badge label="Live now" tone="upcoming" dot />
         </View>
         <Text className="font-inter-bold text-title text-primary-content">{live.class_name}</Text>
         <Text className="text-primary-content">{whenAndWhere(live)}</Text>
+        {/* Full width on a phone; a compact button from 768 px so the banner artwork on the right stays visible. */}
         {liveState.kind === 'open' ? (
-          <Button
-            variant="secondary"
-            size="large"
-            icon="check"
-            label="Check in"
-            onPress={() => {
-              markCheckInStart();
-              router.push(`/check-in/${live.session_id}`);
-            }}
-          />
+          <View className="mt-2 w-full self-start md:w-60">
+            <Button
+              variant="secondary"
+              size="large"
+              icon="check"
+              label="Check in"
+              onPress={() => {
+                markCheckInStart();
+                router.push(`/check-in/${live.session_id}`);
+              }}
+            />
+          </View>
         ) : liveState.kind === 'checked_in' ? (
-          <Button variant="secondary" size="large" icon="checkCircle" label="Checked in" disabled />
+          <View className="mt-2 w-full self-start md:w-60">
+            <Button variant="secondary" size="large" icon="checkCircle" label="Checked in" disabled />
+          </View>
         ) : null}
       </Card>
     ) : null;
@@ -91,7 +99,7 @@ export function StudentHome() {
       {todays.data?.length === 0 && !noClasses ? (
         <Card>
           <EmptyState
-            icon="calendar"
+            image="calendar"
             title="No sessions today"
             message={`Enjoy the free time.${next ? ` Your next session is ${formatDayShort(next.session_date)} at ${hhmm(next.start_time)}.` : ''}`}
             actionLabel="Open calendar"
@@ -99,9 +107,11 @@ export function StudentHome() {
           />
         </Card>
       ) : null}
-      {todays.data?.map((session) => (
-        <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance />
-      ))}
+      <Grid columns={wide ? columns - 1 : columns}>
+        {todays.data?.map((session) => (
+          <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance />
+        ))}
+      </Grid>
     </View>
   );
 
@@ -124,7 +134,7 @@ export function StudentHome() {
     return (
       <Screen title="Home" header={header}>
         <Card>
-          <EmptyState icon="classes" title="No classes yet" message="You're not enrolled in any classes for this period. When your institution adds you to a class, your sessions will show here." />
+          <EmptyState image="classes" title="No classes yet" message="You're not enrolled in any classes for this period. When your institution adds you to a class, your sessions will show here." />
         </Card>
         <Text variant="meta" className="text-center">
           Wrong? Contact your institution&apos;s admin.
