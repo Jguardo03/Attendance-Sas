@@ -9,6 +9,7 @@ export { Dropdown } from './dropdown';
 export { EmptyState } from './empty-state';
 export { ListRow } from './list-row';
 export { Screen, useScrollUp, useScrollUpOn } from './screen';
+export { ScreenHeader } from './screen-header';
 export { SegmentedTabs } from './segmented-tabs';
 export { Select } from './select';
 export { Text } from './text';

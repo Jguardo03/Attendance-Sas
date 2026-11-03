@@ -2,6 +2,7 @@ import '@/global.css';
 
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import { Stack, ThemeProvider } from 'expo-router';
+import Head from 'expo-router/head';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
@@ -52,6 +53,10 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={appTheme}>
+      {/* The browser tab title; nothing happens on a phone. */}
+      <Head>
+        <title>Attendancely</title>
+      </Head>
       <QueryProvider>
         <AuthProvider>
           <RootNavigator />

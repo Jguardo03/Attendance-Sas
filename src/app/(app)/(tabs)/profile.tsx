@@ -1,31 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Badge, Button, Card, Screen, Text } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { SignOutConfirm } from '@/features/shell/sign-out-confirm';
+import { useMyProfile } from '@/features/shell/use-my-profile';
 import { useAuth } from '@/providers/auth';
 
 export default function ProfileScreen() {
-  const { claims, signOut } = useAuth();
+  const { claims } = useAuth();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
-  const appUserId = claims?.appUserId;
-
-  const profile = useQuery({
-    queryKey: ['profile', appUserId],
-    enabled: Boolean(supabase && appUserId),
-    queryFn: async () => {
-      const { data, error } = await supabase!
-        .from('users')
-        .select('id, first_name, last_name, email')
-        .eq('id', appUserId!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const profile = useMyProfile();
 
   return (
     <Screen title="Profile">
@@ -44,15 +30,7 @@ export default function ProfileScreen() {
         {claims?.role ? <Badge label={`Role: ${claims.role}`} /> : null}
       </Card>
 
-      {confirming ? (
-        <Card title="Sign out?">
-          <Text variant="muted">You will need a new sign-in code to get back in.</Text>
-          <Button variant="danger" label="Sign out" onPress={signOut} />
-          <Button variant="secondary" label="Cancel" onPress={() => setConfirming(false)} />
-        </Card>
-      ) : (
-        <Button variant="secondary" label="Sign out" onPress={() => setConfirming(true)} />
-      )}
+      {confirming ? <SignOutConfirm onCancel={() => setConfirming(false)} /> : <Button variant="secondary" label="Sign out" onPress={() => setConfirming(true)} />}
       {__DEV__ ? <Button variant="secondary" label="Dev: UI gallery" onPress={() => router.push('/dev/ui')} /> : null}
     </Screen>
   );

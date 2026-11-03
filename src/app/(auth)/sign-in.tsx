@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 
-import { Button, Card, Screen, Text, TextField } from '@/components/ui';
+import { Button, Card, Text, TextField } from '@/components/ui';
+import { AuthShell } from '@/features/auth/auth-shell';
 import {
   codePattern,
   requestSignInCode,
@@ -65,10 +67,12 @@ export default function SignInScreen() {
 
   if (sent) {
     return (
-      <Screen standalone title="Check your email">
+      <AuthShell>
+        <View className="gap-1">
+          <Text variant="title">Check your email</Text>
+          <Text variant="meta">If this address can sign in, we sent a code to it. Enter the code below. The code works once and expires soon.</Text>
+        </View>
         <Card>
-          <Text>If this address can sign in, we sent a code to it. Enter the code below.</Text>
-          <Text variant="muted">The code works once and expires soon.</Text>
           <TextField
             label="Code"
             value={code}
@@ -84,11 +88,7 @@ export default function SignInScreen() {
             onSubmitEditing={verify}
           />
         </Card>
-        <Button
-          label={verifying ? 'Signing in...' : 'Sign in'}
-          disabled={!codePattern.test(code) || verifying}
-          onPress={verify}
-        />
+        <Button size="large" label={verifying ? 'Signing in...' : 'Sign in'} disabled={!codePattern.test(code) || verifying} onPress={verify} />
         <Button
           variant="secondary"
           label={cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
@@ -96,7 +96,7 @@ export default function SignInScreen() {
           onPress={send}
         />
         <Button
-          variant="secondary"
+          variant="ghost"
           label="Use a different email"
           onPress={() => {
             setSent(false);
@@ -105,16 +105,19 @@ export default function SignInScreen() {
             setCooldown(0);
           }}
         />
-      </Screen>
+      </AuthShell>
     );
   }
 
   return (
-    <Screen standalone title="Sign in">
+    <AuthShell>
+      <View className="gap-1">
+        <Text variant="title">Sign in</Text>
+        <Text variant="meta">We will email you a sign-in code. No password needed.</Text>
+      </View>
       <Card>
-        <Text variant="muted">Enter your institutional email. We will send you a sign-in code.</Text>
         <TextField
-          label="Email"
+          label="Institutional email"
           value={email}
           onChangeText={setEmail}
           placeholder="name@institution.edu"
@@ -126,7 +129,10 @@ export default function SignInScreen() {
           onSubmitEditing={send}
         />
       </Card>
-      <Button label={sending ? 'Sending...' : 'Send code'} disabled={!email.trim() || sending} onPress={send} />
-    </Screen>
+      <Button size="large" label={sending ? 'Sending...' : 'Send sign-in code'} disabled={!email.trim() || sending} onPress={send} />
+      <Text variant="meta" className="text-center">
+        Use your institutional email address.
+      </Text>
+    </AuthShell>
   );
 }
