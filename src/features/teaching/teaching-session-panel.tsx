@@ -89,6 +89,8 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
         </View>
       )}
 
+      {can('attendance.edit_all') ? <Text variant="muted">Permission attendance.edit_all: you can change the attendance record of any student in any session.</Text> : null}
+
       <Card title={`Session attendees (${enrolled})`}>
         <TextField label="Search" value={search} onChangeText={setSearch} placeholder="Name or student ID" autoCapitalize="none" />
         <Dropdown label="Status" value={status} options={[{ value: '', label: 'All' }, ...statuses.map((value) => ({ value, label: value }))]} onChange={setStatus} />

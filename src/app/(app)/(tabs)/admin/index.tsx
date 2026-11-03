@@ -22,9 +22,14 @@ export default function AdminHome() {
             </Card>
           </Pressable>
         ))}
-      <Card title="Coming later">
-        <Text variant="muted">Attendance reports and the Today dashboard.</Text>
-      </Card>
+      {can('attendance.view_all') ? (
+        <Pressable accessibilityRole="link" onPress={() => router.push('/reports')}>
+          <Card>
+            <Text variant="heading">Attendance reports</Text>
+            <Text variant="muted">By student, lecturer or class, with filters and CSV export.</Text>
+          </Card>
+        </Pressable>
+      ) : null}
     </Screen>
   );
 }

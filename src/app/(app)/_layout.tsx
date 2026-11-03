@@ -16,6 +16,7 @@ export default function AppLayout() {
         <Stack.Screen name="room-qr" />
         <Stack.Screen name="attendance/[sessionId]/[studentId]" />
         <Stack.Screen name="student/[id]" />
+        <Stack.Screen name="reports" />
       </Stack.Protected>
       <Stack.Protected guard={pending} redirectTo="/">
         <Stack.Screen name="device-permissions" />

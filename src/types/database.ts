@@ -913,6 +913,48 @@ export type Database = {
         }
         Returns: Json
       }
+      report_classes: {
+        Args: { p_class_id?: number; p_lecturer_id?: string; p_period_id?: number }
+        Returns: {
+          class_average_pct: number
+          class_name: string
+          enrolled: number
+          finished_sessions: number
+          lecturer_id: string
+          lecturer_name: string
+          period_name: string
+          schedule_id: number
+          students_below_75: number
+        }[]
+      }
+      report_lecturers: {
+        Args: { p_class_id?: number; p_lecturer_id?: string; p_period_id?: number }
+        Returns: {
+          average_attendance_pct: number
+          classes: number
+          lecturer_id: string
+          lecturer_name: string
+          sessions_held: number
+        }[]
+      }
+      report_student_classes: {
+        Args: { p_class_id?: number; p_lecturer_id?: string; p_period_id?: number }
+        Returns: {
+          absent: number
+          attendance_pct: number
+          class_name: string
+          finished_sessions: number
+          first_name: string
+          last_name: string
+          late: number
+          lecturer_id: string
+          lecturer_name: string
+          period_name: string
+          present: number
+          schedule_id: number
+          student_id: string
+        }[]
+      }
       generate_sessions: { Args: { p_schedule_id: number }; Returns: number }
       is_allowed_email: { Args: { p_email: string }; Returns: boolean }
       locations_availability: {
