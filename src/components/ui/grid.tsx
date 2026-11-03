@@ -7,6 +7,20 @@ export function useColumns() {
   return width >= 1800 ? 3 : width >= 1280 ? 2 : 1;
 }
 
+// A row of cards that wraps: each card is at least 240 px wide, so a phone gets one per line and a desktop column gets as
+// many as fit side by side (up to 384 px each, so a lone card does not stretch across the whole column).
+export function CardRow({ children }: { children?: ReactNode }) {
+  return (
+    <View className="flex-row flex-wrap items-start gap-4">
+      {Children.toArray(children).map((card, index) => (
+        <View key={index} className="min-w-[240px] flex-1 basis-[240px] md:max-w-sm">
+          {card}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // Lays cards out in columns that fill the row, left to right then down (card 1, 2, 3 across). One column is a plain stack.
 export function Grid({ columns, children }: { columns?: number; children?: ReactNode }) {
   const automatic = useColumns();

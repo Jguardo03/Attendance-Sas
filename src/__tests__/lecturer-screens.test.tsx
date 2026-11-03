@@ -115,7 +115,8 @@ describe('Lecturer Home', () => {
     mockSessionsByKey = { 'teach-upcoming': [session({ session_id: 40, session_date: '2026-11-10', status: 'rescheduled', stored_status: 'rescheduled' })] };
     await render(<LecturerHome />);
     expect(screen.getByText('No sessions today')).toBeTruthy();
-    expect(screen.getByText(/Your next session is/)).toBeTruthy();
+    expect(screen.getByText('You have no sessions today.')).toBeTruthy();
+    expect(screen.getByText(/Your next one is/)).toBeTruthy(); // in the banner
     expect(screen.getByText('Rescheduled')).toBeTruthy();
     expect(screen.queryByText('Live now')).toBeNull();
   });

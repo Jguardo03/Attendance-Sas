@@ -35,7 +35,7 @@ export function Screen({ title, standalone = false, header, children }: { title:
         className="flex-1 bg-surface-muted"
         contentContainerClassName="w-full gap-4 px-5 md:px-8"
         contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: (standalone ? insets.bottom : 0) + 16 }}>
-        {header ?? <Text variant="title">{title}</Text>}
+        {header === undefined ? <Text variant="title">{title}</Text> : header}
         {children}
       </ScrollView>
     </ScrollUpContext.Provider>

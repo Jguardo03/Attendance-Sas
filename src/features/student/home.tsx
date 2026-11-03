@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
-import { Avatar } from '@/components/avatar';
-import { Badge, Button, Card, EmptyState, Grid, Screen, Text, useColumns, Loading } from '@/components/ui';
+import { Button, Card, CardRow, EmptyState, Loading, Screen, Text } from '@/components/ui';
 import { markCheckInStart } from '@/features/check-in/timing';
+import { HomeBanner } from '@/features/sessions/components/home-banner';
 import { SessionCard } from '@/features/sessions/components/session-card';
 import { UpcomingRow } from '@/features/sessions/components/upcoming-row';
-import { checkInState, formatDayLong, formatDayShort, hhmm, whenAndWhere } from '@/features/sessions/format';
+import { checkInState, formatDayLong } from '@/features/sessions/format';
 import { useAppNow, useMyAttendance, useSchedules, useSessions, useStudentOverview } from '@/features/sessions/queries';
 import { useIsExtraWide } from '@/features/shell/nav';
 import { useMyProfile } from '@/features/shell/use-my-profile';
@@ -14,14 +14,12 @@ import { useAuth } from '@/providers/auth';
 
 import { AttendanceSummary } from './attendance-summary';
 
-const banner = require('../../../assets/images/Artboard Banner.png');
-
-// Student Home (Student UI pages 9 to 14): a greeting, the session that is live now with the Check in button,
-// today's sessions, "My attendance" and what is coming up. On a very wide screen the last two sit in a column on the right.
+// Student Home (Student UI pages 9 to 14): a banner with the date, the greeting and the live (or next) session with the
+// Check in button, today's sessions in a row, "My attendance" and what is coming up. On a very wide screen the banner and
+// today's sessions take two thirds and the last two sit in a column on the right.
 export function StudentHome() {
   const router = useRouter();
   const wide = useIsExtraWide();
-  const columns = useColumns();
   const { claims } = useAuth();
   const profile = useMyProfile();
   const now = useAppNow();
@@ -42,51 +40,36 @@ export function StudentHome() {
   ]);
 
   const first = profile.data?.first_name;
-  const name = profile.data ? `${profile.data.first_name} ${profile.data.last_name}` : '';
   const live = todays.data?.find((session) => session.status === 'started');
   const liveState = live ? checkInState(live, attendance.data?.get(live.session_id)) : null;
-  const next = upcoming.data?.[0];
   const noClasses = schedules.data?.length === 0;
 
-  const header = (
-    <View className="flex-row items-center gap-3">
-      <Avatar name={name || claims?.role || '?'} id={claims?.appUserId ?? undefined} size={44} />
-      <View className="flex-1">
-        <Text variant="meta">{today ? formatDayLong(today) : ' '}</Text>
-        <Text variant="title">{noClasses ? `Welcome${first ? `, ${first}` : ''}` : first ? `Hi, ${first}` : 'Hi'}</Text>
-      </View>
-    </View>
+  const banner = (
+    <HomeBanner
+      date={today ? formatDayLong(today) : ' '}
+      title={noClasses ? `Welcome${first ? `, ${first}` : ''}` : first ? `Hi, ${first}` : 'Hi'}
+      todays={noClasses ? undefined : todays.data}
+      upcoming={upcoming.data}
+      live={noClasses ? undefined : live}
+      message={noClasses ? 'You are not enrolled in any classes yet.' : undefined}
+      action={
+        liveState?.kind === 'open' ? (
+          <Button
+            variant="secondary"
+            size="large"
+            icon="check"
+            label="Check in now"
+            onPress={() => {
+              markCheckInStart();
+              router.push(`/check-in/${live?.session_id}`);
+            }}
+          />
+        ) : liveState?.kind === 'checked_in' ? (
+          <Button variant="secondary" size="large" icon="checkCircle" label="Checked in" disabled />
+        ) : undefined
+      }
+    />
   );
-
-  const hero =
-    live && liveState ? (
-      <Card variant="hero" image={banner}>
-        <View className="flex-row">
-          <Badge label="Live now" tone="upcoming" dot />
-        </View>
-        <Text className="font-inter-bold text-title text-primary-content">{live.class_name}</Text>
-        <Text className="text-primary-content">{whenAndWhere(live)}</Text>
-        {/* Full width on a phone; a compact button from 768 px so the banner artwork on the right stays visible. */}
-        {liveState.kind === 'open' ? (
-          <View className="mt-2 w-full self-start md:w-60">
-            <Button
-              variant="secondary"
-              size="large"
-              icon="check"
-              label="Check in"
-              onPress={() => {
-                markCheckInStart();
-                router.push(`/check-in/${live.session_id}`);
-              }}
-            />
-          </View>
-        ) : liveState.kind === 'checked_in' ? (
-          <View className="mt-2 w-full self-start md:w-60">
-            <Button variant="secondary" size="large" icon="checkCircle" label="Checked in" disabled />
-          </View>
-        ) : null}
-      </Card>
-    ) : null;
 
   const todayList = (
     <View className="gap-3">
@@ -101,17 +84,17 @@ export function StudentHome() {
           <EmptyState
             image="calendar"
             title="No sessions today"
-            message={`Enjoy the free time.${next ? ` Your next session is ${formatDayShort(next.session_date)} at ${hhmm(next.start_time)}.` : ''}`}
+            message="Enjoy the free time."
             actionLabel="Open calendar"
             onAction={() => router.push('/calendar')}
           />
         </Card>
       ) : null}
-      <Grid columns={wide ? columns - 1 : columns}>
+      <CardRow>
         {todays.data?.map((session) => (
           <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance />
         ))}
-      </Grid>
+      </CardRow>
     </View>
   );
 
@@ -132,7 +115,8 @@ export function StudentHome() {
   // Not enrolled anywhere yet (Student UI page 14).
   if (noClasses) {
     return (
-      <Screen title="Home" header={header}>
+      <Screen title="Home" header={null}>
+        {banner}
         <Card>
           <EmptyState image="classes" title="No classes yet" message="You're not enrolled in any classes for this period. When your institution adds you to a class, your sessions will show here." />
         </Card>
@@ -144,11 +128,13 @@ export function StudentHome() {
   }
 
   return (
-    <Screen title="Home" header={header}>
-      {hero}
+    <Screen title="Home" header={null}>
       {wide ? (
         <View className="flex-row items-start gap-4">
-          <View className="flex-[2] gap-4">{todayList}</View>
+          <View className="flex-[2] gap-4">
+            {banner}
+            {todayList}
+          </View>
           <View className="flex-1 gap-4">
             <AttendanceSummary numbers={overview.data?.values()} />
             {comingUp}
@@ -156,6 +142,7 @@ export function StudentHome() {
         </View>
       ) : (
         <>
+          {banner}
           {todayList}
           <AttendanceSummary numbers={overview.data?.values()} />
           {comingUp}

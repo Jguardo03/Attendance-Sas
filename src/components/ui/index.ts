@@ -7,7 +7,7 @@ export { Collapsible } from './collapsible';
 export { DateField } from './date-field';
 export { Dropdown } from './dropdown';
 export { EmptyState } from './empty-state';
-export { Grid, useColumns } from './grid';
+export { CardRow, Grid, useColumns } from './grid';
 export { ListRow } from './list-row';
 export { Loading } from './loading';
 export { Screen, useScrollUp, useScrollUpOn } from './screen';

@@ -171,7 +171,7 @@ describe('Student Home', () => {
     expect(screen.getByText('Tue 3 Nov 2026')).toBeTruthy();
     expect(screen.getByText('Live now')).toBeTruthy();
     expect(screen.getByText("Today's sessions")).toBeTruthy();
-    await fireEvent.press(screen.getAllByRole('button', { name: 'Check in' })[0]);
+    await fireEvent.press(screen.getByRole('button', { name: 'Check in now' }));
     expect(mockPush).toHaveBeenCalledWith('/check-in/38');
   });
 
@@ -187,9 +187,19 @@ describe('Student Home', () => {
     mockSessionsByKey = { today: [], upcoming: [session({ session_id: 39, session_date: '2026-11-09', status: 'scheduled' })] };
     await render(<StudentHome />);
     expect(screen.getByText('No sessions today')).toBeTruthy();
-    expect(screen.getByText('Enjoy the free time. Your next session is Mon 9 Nov at 10:00.')).toBeTruthy();
+    expect(screen.getByText('Enjoy the free time.')).toBeTruthy();
+    expect(screen.getByText('No sessions today. Your next one is Mon 9 Nov at 10:00.')).toBeTruthy(); // in the banner
     await fireEvent.press(screen.getByRole('button', { name: 'Open calendar' }));
     expect(mockPush).toHaveBeenCalledWith('/calendar');
+  });
+
+  it('keeps the banner when nothing is live: it shows the next session and has no Check in now button', async () => {
+    mockSessionsByKey = { today: [session({ status: 'scheduled', now_local: '2026-11-03T08:00:00' })], upcoming: [] };
+    await render(<StudentHome />);
+    expect(screen.getByText('Hi, Leo')).toBeTruthy();
+    expect(screen.getByText('Next: Web Development · 10:00 to 12:00 · Room 1.02')).toBeTruthy();
+    expect(screen.queryByText('Live now')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Check in now' })).toBeNull();
   });
 
   it('says there are no classes yet for a student who is not enrolled', async () => {

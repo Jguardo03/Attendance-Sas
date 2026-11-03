@@ -441,6 +441,10 @@ Do not touch entity definitions, validation or database error mapping; forms kee
 
 No animation that blocks check in; no information conveyed by colour alone.
 
+### Home correction (2026-11-04, after Phase 9)
+
+Student and lecturer Home now follow the reference images: no separate header; one `HomeBanner` (`src/features/sessions/components/home-banner.tsx`) with the date, the greeting and the live session plus its button, or, with none live, the next session today (no button), or "No sessions today. Your next one is ...". On 1280 px and wider the banner and "Today's sessions" take two thirds and the attendance and Coming up cards sit beside them; narrower, everything stacks with the banner first. Today's cards are a wrapping row (`CardRow`, at least 240 px each). The lecturer banner no longer has the progress ring; the "N of M checked in" line stays.
+
 ---
 
 ## Phase 9: Final verification
