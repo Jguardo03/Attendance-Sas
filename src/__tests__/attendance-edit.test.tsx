@@ -100,6 +100,7 @@ describe('attendance edit rules', () => {
     expect(statusWord(null)).toBe('Not checked in');
     expect(changeSentence('absent', 'present')).toMatch(/^Changes Absent to Present\. Saved with your name/);
     expect(changeSentence(undefined, 'present')).toMatch(/^Checks the student in as Present/);
+    expect(changeSentence('late', 'late', false)).toBe('Nothing has changed yet. Choose a different status or time.');
     expect(checkedInSummary('present', '07:00')).toBe('07:00 · Manual');
     expect(checkedInSummary('absent', '07:00')).toBe('-');
     expect(describeChangeError('not_allowed')).toMatch(/sessions you teach/);
@@ -161,6 +162,15 @@ describe('attendance record screen', () => {
     expect(screen.getByText(/Last changed: System, 23\/10\/2026 08:30/)).toBeTruthy();
     expect(screen.getByText('Change attendance')).toBeTruthy();
     expect(screen.getByText("View student's attendance")).toBeTruthy();
+  });
+
+  it('says nothing has changed until the status or time differs', async () => {
+    mockQueryData = { ...mockQueryData, record: { ...absentRecord, status: 'late', checked_in_at: '2026-10-22T21:05:00+00:00', check_in_method: 'qr' } };
+    await renderRecord();
+    await fireEvent.press(screen.getByText('Change attendance'));
+    expect(screen.getByText('Nothing has changed yet. Choose a different status or time.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Present'));
+    expect(screen.getByText(/^Changes Late to Present\./)).toBeTruthy();
   });
 
   it('hides the change button from someone who may not edit', async () => {

@@ -51,7 +51,8 @@ export function validateChange(session: Pick<Session, 'session_date' | 'check_in
 }
 
 /** The sentence under the form: what the change does. */
-export function changeSentence(oldStatus: string | null | undefined, newStatus: EditableStatus): string {
+export function changeSentence(oldStatus: string | null | undefined, newStatus: EditableStatus, changed = true): string {
+  if (!changed) return 'Nothing has changed yet. Choose a different status or time.';
   const saved = "Saved with your name; the student's class percentage updates.";
   return oldStatus
     ? `Changes ${statusWord(oldStatus)} to ${statusWord(newStatus)}. ${saved}`

@@ -167,7 +167,7 @@ function RecordBody({
           error={errors.reason}
           placeholder="Why is this changing?"
         />
-        <Text variant="muted">{changeSentence(current?.status, status)}</Text>
+        <Text variant="muted">{changeSentence(current?.status, status, !(current && current.status === status && (status === 'absent' || time === defaultTime(data, current.checked_in_at))))}</Text>
         <Button label="Save change" onPress={review} />
         <Button variant="secondary" label="Cancel" onPress={() => setMode('view')} />
       </Screen>

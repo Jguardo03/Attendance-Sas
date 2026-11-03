@@ -545,9 +545,18 @@ A student walks into a room, taps Check in on their own phone, and is recorded p
 
 ### Verification checklist
 
-- [ ] Numbers on the Admin Classes screen match independent SQL via `execute_sql`.
-- [ ] Admin edits a lecturer's session record; `updated_by` is the admin.
-- [ ] Report with 10k generated attendance rows loads in under 3 s (generate with SQL).
+- [x] Numbers on the Admin Classes screen match independent SQL via `execute_sql`. (Browser as admin: all four classes in 2026 Term 4 matched on enrolled, class average and below 75%, 9 below in total. `supabase/tests/phase10_reports.sql` also compares every row of all three reports with raw-table SQL.)
+- [x] Admin edits a lecturer's session record; `updated_by` is the admin. (Browser as admin on a record in L1000002's session: `updated_by = A1000001`, `created_by` stays the lecturer, reason saved, history shows both changes.)
+- [x] Report with 10k generated attendance rows loads in under 3 s (generate with SQL). (9,724 attendance rows in total with row level security on: by student 68 ms, by class 92 ms, by lecturer 36 ms in the database. Not measured end to end over the network, and the seed has only 11 students, so the reports return few rows.)
+
+### Phase 10 as built
+
+- **Already there from Phases 7 and 9:** the Admin Classes screen (period filter defaults to the active period; Enrolled, Class average, Below 75%), class details with Students / Upcoming / Previous and "Manage enrolment", and the admin session screen (same panel as the lecturer's, without lecturer filtering, with Phase 9's record and change flow). Phase 10 adds a one-line note on the admin session screen about `attendance.edit_all`.
+- **Server:** migration `20261103020000_phase10_reports.sql`: `report_student_classes`, `report_classes` and `report_lecturers`, all `SECURITY INVOKER` so row level security decides who sees what (an admin everything, a lecturer their own classes, a student only themselves) and all optional filters (period, class, lecturer) applied in SQL. Only finished sessions count, cancelled ones are left out, no row means absent. 14 database checks.
+- **App:** `/reports` (admin hub card "Attendance reports", needs `attendance.view_all`): By student (one row per student per class, % badge, links to the student history), By lecturer (classes, sessions held, average attendance) and By class (enrolled, sessions held, average, below 75%, links to class details). Filters for period, class, lecturer, and for students a Standing filter (All, Below 75%, 75% or above, No finished sessions yet). 50 rows are shown at a time. Export CSV exports every row of the current view and filters: a file download on web (checked in the browser: `attendance-by-student-<date>.csv`, header plus 29 rows, UTF-8 with a byte order mark) and the share sheet on a phone (text, not a file; not tried on a device). Cells that start with `=`, `+`, `-` or `@` are written with a leading apostrophe so a spreadsheet does not run them.
+- **Assumptions to confirm:** the CSV need is not in the documents (PLAN.md already said to confirm it); "status" in the report filters is read as the student's standing (below 75% or not), not as present/late/absent, because the reports are totals.
+- **Not verified:** the share sheet on Android and iOS, Android and iOS in general, the reports on a large real data set (many students), the lecturer's own use of reports (the functions allow it, the screen is admin only).
+- **Test data left in the project:** S1000007's record in session 38 was changed by the admin (late to present).
 
 ### Anti-patterns
 
