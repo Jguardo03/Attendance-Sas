@@ -25,7 +25,7 @@ export function Collapsible({
         accessibilityLabel={title}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((current) => !current)}
-        className="min-h-6 flex-row items-center justify-between">
+        className="min-h-11 flex-row items-center justify-between">
         <Text variant="card">{title}</Text>
         <Icon name={open ? 'chevronUp' : 'chevronDown'} size={20} color="contentMuted" />
       </Pressable>

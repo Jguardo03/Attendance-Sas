@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-import { Badge, Button, Card, EmptyState, Grid, Screen, Text, useColumns } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Grid, Screen, Text, useColumns, Loading } from '@/components/ui';
 import { markCheckInStart } from '@/features/check-in/timing';
 import { SessionCard } from '@/features/sessions/components/session-card';
 import { UpcomingRow } from '@/features/sessions/components/upcoming-row';
@@ -94,7 +94,7 @@ export function StudentHome() {
         <Text variant="section">Today&apos;s sessions</Text>
         {todays.data && todays.data.length > 0 ? <Text variant="meta">{todays.data.length} today</Text> : null}
       </View>
-      {todays.isPending || now.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {todays.isPending || now.isPending ? <Loading /> : null}
       {todays.isError ? <Text variant="error">Could not load the sessions for today.</Text> : null}
       {todays.data?.length === 0 && !noClasses ? (
         <Card>

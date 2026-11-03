@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Badge, Button, Card, Collapsible, Dropdown, EmptyState, Grid, Screen, ScreenHeader, SegmentedTabs, Text } from '@/components/ui';
+import { Badge, Button, Card, Collapsible, Dropdown, EmptyState, Grid, Screen, ScreenHeader, SegmentedTabs, Text, Loading } from '@/components/ui';
 import { useSchedules } from '@/features/sessions/queries';
 import { useAuth } from '@/providers/auth';
 import { shadows } from '@/theme/tokens';
@@ -118,7 +118,7 @@ export function ReportsScreen() {
       <Button variant="secondary" icon="download" label="Export CSV" disabled={count === 0} onPress={download} />
       {failure ? <Text variant="error">{failure}</Text> : null}
 
-      {schedules.isPending || active.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {schedules.isPending || active.isPending ? <Loading /> : null}
       {active.isError ? <Text variant="error">The report could not be loaded. Try again.</Text> : null}
       {active.data && count === 0 ? (
         <Card>

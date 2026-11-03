@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { ProgressRing } from '@/components/charts';
-import { Button, Card, Collapsible, Dropdown, EmptyState, Grid, Screen, Text, TextField } from '@/components/ui';
+import { Button, Card, Collapsible, Dropdown, EmptyState, Grid, Screen, Text, TextField, Loading } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useClassSummaries, useSchedules } from '@/features/sessions/queries';
 import { shadows } from '@/theme/tokens';
@@ -50,7 +50,7 @@ export function AdminClasses() {
         <Text variant="section">{`${shown.length} class${shown.length === 1 ? '' : 'es'}${period ? ` in ${period}` : ''}`}</Text>
         {summaries.data ? <Text variant="meta">{below} students below 75% in total</Text> : null}
       </View>
-      {schedules.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {schedules.isPending ? <Loading /> : null}
       {schedules.isError ? <Text variant="error">Could not load classes.</Text> : null}
       {schedules.data && shown.length === 0 ? (
         <Card>

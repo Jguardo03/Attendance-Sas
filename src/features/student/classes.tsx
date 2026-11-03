@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { ClassArtwork } from '@/components/class-artwork';
 import { ProgressRing } from '@/components/charts';
-import { EmptyState, Grid, Screen, SegmentedTabs, Text, Card } from '@/components/ui';
+import { EmptyState, Grid, Screen, SegmentedTabs, Text, Card, Loading } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useSchedules, useStudentOverview, type AttendanceNumbers, type ScheduleOverview } from '@/features/sessions/queries';
 import { RING_THRESHOLD } from '@/lib/ring';
@@ -75,7 +75,7 @@ export function StudentClasses() {
         ]}
         onChange={(value) => setTab(value as 'current' | 'previous')}
       />
-      {schedules.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {schedules.isPending ? <Loading /> : null}
       {schedules.isError ? <Text variant="error">Could not load your classes.</Text> : null}
       {schedules.data && shown.length === 0 ? (
         <Card>

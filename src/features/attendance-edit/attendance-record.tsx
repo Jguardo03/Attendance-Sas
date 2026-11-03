@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon, type IconName } from '@/components/icon';
-import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, TextField, TimeField, useScrollUpOn } from '@/components/ui';
+import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, TextField, TimeField, useScrollUpOn, Loading } from '@/components/ui';
 import {
   attendancePill,
   formatDayLong,
@@ -99,7 +99,7 @@ export function AttendanceRecord({ sessionId, studentId, startEditing = false }:
   const history = useAttendanceHistory(studentId, sessionId);
 
   const header = <ScreenHeader title="Attendance record" onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
-  if (session.isPending || record.isPending || student.isPending) return <Screen standalone title="Attendance record" header={header}><Text variant="muted">Loading...</Text></Screen>;
+  if (session.isPending || record.isPending || student.isPending) return <Screen standalone title="Attendance record" header={header}><Loading /></Screen>;
   if (!session.data || !student.data) return <Screen standalone title="Attendance record" header={header}><Text variant="error">This record was not found.</Text></Screen>;
 
   return <RecordBody session={session.data} person={student.data} current={record.data ?? null} history={history} startEditing={startEditing} />;
@@ -301,7 +301,7 @@ function RecordBody({
       <Button variant="secondary" label="View student's attendance" onPress={() => router.push(`/student/${person.id}?schedule=${data.schedule_id}`)} />
 
       <Card title="History">
-        {history.isPending ? <Text variant="muted">Loading...</Text> : null}
+        {history.isPending ? <Loading /> : null}
         {history.data && history.data.length === 0 ? <Text variant="meta">No changes recorded.</Text> : null}
         {history.data?.map((row, index) => (
           <View key={`${row.changed_at}-${index}`} className="gap-1 border-t border-border pt-2">

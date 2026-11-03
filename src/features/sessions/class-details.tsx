@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { BreakdownRing } from '@/components/charts';
 import { Icon } from '@/components/icon';
-import { Badge, Card, Screen, ScreenHeader, SegmentedTabs, Text } from '@/components/ui';
+import { Badge, Card, Screen, ScreenHeader, SegmentedTabs, Text, Loading } from '@/components/ui';
 import { useAuth } from '@/providers/auth';
 
 import {
@@ -67,7 +67,7 @@ export function ClassDetails({ scheduleId }: { scheduleId: number }) {
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/classes'));
 
-  if (schedule.isPending) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Text variant="muted">Loading...</Text></Screen>;
+  if (schedule.isPending) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Loading /></Screen>;
   if (!schedule.data) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Text variant="error">This class was not found.</Text></Screen>;
 
   const info = schedule.data;

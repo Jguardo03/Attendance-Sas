@@ -13,7 +13,7 @@ import { useAppNow, useAttendanceCounts, useMyAttendance, useSessions } from './
 
 export function StepButton({ icon, label, onPress }: { icon: 'chevronLeft' | 'chevronRight'; label: string; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} className="h-10 w-10 items-center justify-center rounded-button border border-border bg-surface active:opacity-80">
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} className="h-11 w-11 items-center justify-center rounded-button border border-border bg-surface active:opacity-80">
       <Icon name={icon} size={20} color="content" />
     </Pressable>
   );

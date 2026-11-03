@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { ProgressRing } from '@/components/charts';
-import { Badge, Banner, Button, Card, Dropdown, Text, TextField } from '@/components/ui';
+import { Badge, Banner, Button, Card, Dropdown, Text, TextField, Loading } from '@/components/ui';
 import { canChangeAttendance } from '@/features/attendance-edit/logic';
 import { attendancePill, checkedInAt, hhmm, methodLabel, type Session } from '@/features/sessions/format';
 import { useAttendanceList } from '@/features/sessions/queries';
@@ -94,7 +94,7 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
             <Dropdown label="Status" value={status} options={[{ value: '', label: 'All' }, ...statuses.map((value) => ({ value, label: value }))]} onChange={setStatus} />
           </View>
         </View>
-        {list.isPending ? <Text variant="muted">Loading...</Text> : null}
+        {list.isPending ? <Loading /> : null}
         {list.data && enrolled === 0 ? <Text variant="meta">No students are enrolled in this class.</Text> : null}
         {list.data && enrolled > 0 && visible.length === 0 ? <Text variant="meta">No students match.</Text> : null}
         {visible.map(({ row, status: label }) => (

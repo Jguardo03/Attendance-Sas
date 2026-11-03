@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
-import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, TextField, type BadgeTone } from '@/components/ui';
+import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, TextField, type BadgeTone, Loading } from '@/components/ui';
 import { checkInState, checkedInAt, methodLabel, whenAndWhere } from '@/features/sessions/format';
 import { useAuth } from '@/providers/auth';
 import { parsePayload } from '@/lib/qr-protocol';
@@ -70,7 +70,7 @@ export function CheckInScreen({ sessionId }: { sessionId: number }) {
     setPhase('scanning');
   }
 
-  if (session.isPending) return <Screen standalone title="Check in" header={<ScreenHeader title="Check in" onBack={back} />}><Text variant="muted">Loading...</Text></Screen>;
+  if (session.isPending) return <Screen standalone title="Check in" header={<ScreenHeader title="Check in" onBack={back} />}><Loading /></Screen>;
   if (!session.data) {
     return (
       <Screen standalone title="Check in" header={<ScreenHeader title="Check in" onBack={back} />}>

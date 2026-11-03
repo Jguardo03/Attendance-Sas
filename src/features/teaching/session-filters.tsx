@@ -53,7 +53,7 @@ export function SessionFilters({
               accessibilityRole="button"
               accessibilityLabel={`Remove ${chipLabels[key]} filter`}
               onPress={() => set(key)('')}
-              className="min-h-9 flex-row items-center gap-1.5 rounded-full bg-primary-tint px-3 active:opacity-80">
+              className="min-h-11 flex-row items-center gap-1.5 rounded-full bg-primary-tint px-3 active:opacity-80">
               <Text variant="label" className="text-primary">{`${chipLabels[key]}: ${value[key]}`}</Text>
               <Icon name="close" size={14} color="primary" />
             </Pressable>

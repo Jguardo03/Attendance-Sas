@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Card, EmptyState, Grid, Screen, Text, useColumns } from '@/components/ui';
+import { Card, EmptyState, Grid, Screen, Text, useColumns, Loading } from '@/components/ui';
 import { formatDayLong } from '@/features/sessions/format';
 import { useAdminTodayCounts, useAppNow, useAttendanceCounts, useSessions } from '@/features/sessions/queries';
 import { activeFilterCount, filterSessions, type SessionFilterValues } from '@/features/sessions/teaching';
@@ -63,7 +63,7 @@ export function AdminToday() {
         <Text variant="meta">Each listed once</Text>
       </View>
       <Text variant="meta">One row per session. Each session is listed once, even with many students enrolled.</Text>
-      {sessions.isPending || now.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {sessions.isPending || now.isPending ? <Loading /> : null}
       {sessions.isError ? <Text variant="error">Could not load the sessions for today.</Text> : null}
       {sessions.data && visible.length === 0 ? (
         <Card>

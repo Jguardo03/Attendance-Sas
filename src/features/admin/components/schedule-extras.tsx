@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Collapsible, Select, Text, TextField } from '@/components/ui';
+import { Badge, Button, Card, Collapsible, Select, Text, TextField, Loading } from '@/components/ui';
 import { sessionPill } from '@/features/sessions/format';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
@@ -150,7 +150,7 @@ function Sessions({ id, schedule }: { id: string; schedule: Row }) {
       {failure ? <CrudError error={failure} onAction={clear} onDismiss={clear} /> : null}
       <Button label={generate.isPending ? 'Generating...' : 'Generate sessions'} disabled={generate.isPending} onPress={() => { setMessage(null); generate.mutate(); }} />
       {message ? <Text variant="muted">{message}</Text> : null}
-      {sessions.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {sessions.isPending ? <Loading /> : null}
       {sessions.data?.length === 0 ? <Text variant="muted">No sessions yet. Generate them from the period dates and frequency.</Text> : null}
       {sessions.data?.map((session) => (
         <SessionRow key={`${session.id}-${session.status}-${session.override_start_time}`} session={session} schedule={schedule} onChanged={refresh} />

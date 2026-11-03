@@ -26,7 +26,7 @@ export function ScreenHeader({
           accessibilityRole="button"
           accessibilityLabel="Back"
           onPress={onBack}
-          className="h-10 w-10 items-center justify-center rounded-full bg-surface active:opacity-80"
+          className="h-11 w-11 items-center justify-center rounded-full bg-surface active:opacity-80"
           style={{ boxShadow: shadows.card }}>
           <Icon name="chevronLeft" size={22} color="content" />
         </Pressable>

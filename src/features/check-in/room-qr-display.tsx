@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
+import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, Loading } from '@/components/ui';
 import { QrCode } from '@/components/qr-code';
 import { FunctionCallError } from '@/lib/functions';
 
@@ -48,7 +48,7 @@ export function RoomQrDisplay({ sessionId, locationId }: { sessionId?: number; l
 
   return (
     <Screen standalone title="Room QR code" header={<ScreenHeader title="Room QR code" subtitle={qr.data?.location_name} onBack={back} />}>
-      {qr.isPending ? <Text variant="muted">Loading the code...</Text> : null}
+      {qr.isPending ? <Loading label="Loading the code..." /> : null}
 
       {qr.error && !qr.data ? (
         <Card title="Cannot show the code">

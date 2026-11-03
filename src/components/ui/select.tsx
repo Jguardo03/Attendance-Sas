@@ -32,7 +32,7 @@ export function Select({
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               onPress={() => onChange(option.value)}
-              className={`min-h-10 justify-center rounded-full border px-4 active:opacity-80 ${selected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
+              className={`min-h-11 justify-center rounded-full border px-4 active:opacity-80 ${selected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
               <Text className={`font-inter-medium ${selected ? 'text-primary-content' : 'text-content'}`}>{option.label}</Text>
             </Pressable>
           );

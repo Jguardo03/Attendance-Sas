@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { ProgressRing } from '@/components/charts';
 import { Icon } from '@/components/icon';
-import { Badge, Button, Card, Dropdown, EmptyState, Screen, ScreenHeader, SegmentedTabs, Text, TextField } from '@/components/ui';
+import { Badge, Button, Card, Dropdown, EmptyState, Screen, ScreenHeader, SegmentedTabs, Text, TextField, Loading } from '@/components/ui';
 import { adminHref } from '@/features/admin/routes';
 import { formatDayShort, sessionPill, slotLabel, timeRange } from '@/features/sessions/format';
 import {
@@ -46,7 +46,7 @@ export function TeachingClassDetails({ scheduleId }: { scheduleId: number }) {
   const counts = useAttendanceCounts(dates[0] ?? '', dates[dates.length - 1] ?? '', dates.length > 0);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/classes'));
-  if (schedule.isPending) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Text variant="muted">Loading...</Text></Screen>;
+  if (schedule.isPending) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Loading /></Screen>;
   if (!schedule.data) return <Screen standalone title="Class details" header={<ScreenHeader title="Class details" onBack={goBack} />}><Text variant="error">This class was not found.</Text></Screen>;
 
   const info = schedule.data;
@@ -131,7 +131,7 @@ export function TeachingClassDetails({ scheduleId }: { scheduleId: number }) {
               </View>
             </View>
           ) : null}
-          {students.isPending ? <Text variant="muted">Loading...</Text> : null}
+          {students.isPending ? <Loading /> : null}
           {students.data?.length === 0 ? (
             <Card>
               <EmptyState

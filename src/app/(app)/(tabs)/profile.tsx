@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon, type IconName } from '@/components/icon';
-import { Button, Card, Screen, Text } from '@/components/ui';
+import { Button, Card, Screen, Text, Loading } from '@/components/ui';
 import { audienceOf } from '@/features/sessions/audience';
 import { roleLabel } from '@/features/shell/nav';
 import { SignOutConfirm } from '@/features/shell/sign-out-confirm';
@@ -75,7 +75,7 @@ export default function ProfileScreen() {
           </View>
         ) : undefined
       }>
-      {profile.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {profile.isPending ? <Loading /> : null}
       {profile.isError ? <Text variant="error">Could not load your profile.</Text> : null}
 
       {audienceOf(can) === 'lecturer' ? <LecturerStats /> : null}

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Text, useScrollUpOn } from '@/components/ui';
+import { Badge, Button, Card, Text, useScrollUpOn, Loading } from '@/components/ui';
 import { mapDbError, type FriendlyError } from '@/lib/db-errors';
 
 import { deleteEntity, getRow, listPermissions, loadRelations } from '../api';
@@ -55,7 +55,7 @@ export function EntityDetails({ entity, id }: { entity: EntityDef; id: string })
     },
   });
 
-  if (row.isPending || relations.isPending) return <Text variant="muted">Loading...</Text>;
+  if (row.isPending || relations.isPending) return <Loading />;
   if (row.isError || !row.data) return <Text variant="error">Could not load this {entity.singular}.</Text>;
 
   const data = row.data;

@@ -17,7 +17,7 @@ export function SegmentedTabs({ label, options, value, onChange }: { label: stri
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            className={`min-h-10 flex-1 items-center justify-center rounded-full border px-4 active:opacity-80 ${selected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
+            className={`min-h-11 flex-1 items-center justify-center rounded-full border px-4 active:opacity-80 ${selected ? 'border-primary bg-primary' : 'border-border bg-surface'}`}>
             <Text className={`font-inter-semibold ${selected ? 'text-primary-content' : 'text-primary'}`}>{option.label}</Text>
           </Pressable>
         );

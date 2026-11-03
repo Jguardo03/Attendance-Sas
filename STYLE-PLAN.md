@@ -423,6 +423,20 @@ Do not touch entity definitions, validation or database error mapping; forms kee
 - [ ] Turn on Android TalkBack for one screen and confirm labels read sensibly (manual note).
 - [ ] Tests, typecheck, lint pass.
 
+### Phase 8 results (done 2026-11-04)
+
+- **Loading:** one `Loading` component (spinner plus the words, announced as a progress bar) replaces every "Loading..." line, "Loading the code..." and "Checking locations...".
+- **Web:** a visible keyboard focus ring, the pointer cursor on buttons, links, tabs, radios and checkboxes, a "not allowed" cursor on disabled ones, and a light hover. The CSS is added once from `src/lib/web-styles.ts` (called in the root layout). A custom `+html.tsx` was tried first and removed: in the dev server it stopped Expo adding the app script, which left a blank page.
+- **Touch targets:** every tab, chip, collapsible header, back and week step button, and filter chip is now at least 44 px (they were 24 to 40).
+- **Tests:** `states-a11y.test.tsx` (Loading, names on the icon-only week and dismiss buttons, tab and collapsible state). 299 in total; typecheck and lint pass.
+- **Verified:** web at 1440 px as the demo admin: Tab moves focus with a visible outline, Enter opens Filters, the cursor is a pointer, and Today's five stat tiles now fit in one row.
+- **Not done:**
+  - Skeleton blocks for long lists (the spinner line is used everywhere).
+  - Reduced motion for the check-in rings: nothing in the app animates (no animation library is used), so there is nothing to switch off.
+  - Arrow-key movement inside Dropdown and Select (they work with Tab and Enter or Space).
+  - TalkBack on Android and a screen reader pass on web.
+  - Empty states still use the short inline text in a few lists (for example attendees and history rows inside a card).
+
 ### Anti-pattern guards
 
 No animation that blocks check in; no information conveyed by colour alone.

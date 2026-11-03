@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
-import { Button, Card, Dropdown, EmptyState, Grid, Text, TextField } from '@/components/ui';
+import { Button, Card, Dropdown, EmptyState, Grid, Text, TextField, Loading } from '@/components/ui';
 import { shadows } from '@/theme/tokens';
 
 import { listRows } from '../api';
@@ -52,7 +52,7 @@ export function EntityList({ entity }: { entity: EntityDef }) {
         />
       ))}
 
-      {rows.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {rows.isPending ? <Loading /> : null}
       {rows.isError ? <Text variant="error">Could not load {entity.label.toLowerCase()}.</Text> : null}
       {rows.data && visible.length === 0 ? (
         <Card>

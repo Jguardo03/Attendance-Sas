@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { ProgressRing } from '@/components/charts';
-import { Badge, Button, Card, EmptyState, Grid, Screen, Text, useColumns } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Grid, Screen, Text, useColumns, Loading } from '@/components/ui';
 import { UpcomingRow } from '@/features/sessions/components/upcoming-row';
 import { formatDayLong, formatDayShort, hhmm, whenAndWhere } from '@/features/sessions/format';
 import { useAppNow, useAttendanceCounts, useSessions } from '@/features/sessions/queries';
@@ -89,7 +89,7 @@ export function LecturerHome() {
         <Text variant="section">Today&apos;s sessions</Text>
         {todays.data && todays.data.length > 0 ? <Text variant="meta">{todays.data.length} today</Text> : null}
       </View>
-      {todays.isPending || now.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {todays.isPending || now.isPending ? <Loading /> : null}
       {todays.isError ? <Text variant="error">Could not load the sessions for today.</Text> : null}
       {todays.data?.length === 0 ? (
         <Card>

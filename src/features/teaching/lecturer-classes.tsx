@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { ClassArtwork } from '@/components/class-artwork';
 import { ProgressRing } from '@/components/charts';
-import { Card, EmptyState, Grid, Screen, SegmentedTabs, Text } from '@/components/ui';
+import { Card, EmptyState, Grid, Screen, SegmentedTabs, Text, Loading } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useClassSummaries, useSchedules, useSessionTotals, type ClassSummary, type ScheduleOverview } from '@/features/sessions/queries';
 import { shadows } from '@/theme/tokens';
@@ -93,7 +93,7 @@ export function LecturerClasses() {
         ]}
         onChange={(value) => setTab(value as 'current' | 'previous')}
       />
-      {schedules.isPending ? <Text variant="muted">Loading...</Text> : null}
+      {schedules.isPending ? <Loading /> : null}
       {schedules.isError ? <Text variant="error">Could not load your classes.</Text> : null}
       {schedules.data && shown.length === 0 ? (
         <Card>

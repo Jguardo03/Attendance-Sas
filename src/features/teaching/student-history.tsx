@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { BreakdownRing } from '@/components/charts';
 import { Icon } from '@/components/icon';
-import { Badge, Button, Card, Dropdown, Screen, ScreenHeader, Text } from '@/components/ui';
+import { Badge, Button, Card, Dropdown, Screen, ScreenHeader, Text, Loading } from '@/components/ui';
 import { attendancePill, formatDayShort, melbourneTime, methodLabel, slotLabel, timeRange } from '@/features/sessions/format';
 import { useMyAttendance, useSessions, useSharedSchedules, useStudentClassNumbers, useStudentInfo } from '@/features/sessions/queries';
 import { attendeeStatus } from '@/features/sessions/teaching';
@@ -27,7 +27,7 @@ export function StudentHistory({ studentId, scheduleId }: { studentId: string; s
   const rows = useMyAttendance(studentId, held.map((session) => session.session_id));
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
-  if (info.isPending) return <Screen standalone title="Student" header={<ScreenHeader title="Student" onBack={goBack} />}><Text variant="muted">Loading...</Text></Screen>;
+  if (info.isPending) return <Screen standalone title="Student" header={<ScreenHeader title="Student" onBack={goBack} />}><Loading /></Screen>;
   if (!info.data) return <Screen standalone title="Student" header={<ScreenHeader title="Student" onBack={goBack} />}><Text variant="error">This student was not found.</Text></Screen>;
 
   const person = info.data;
@@ -50,7 +50,7 @@ export function StudentHistory({ studentId, scheduleId }: { studentId: string; s
       </Card>
 
       <Card title="Shared classes">
-        {shared.isPending ? <Text variant="muted">Loading...</Text> : null}
+        {shared.isPending ? <Loading /> : null}
         {shared.data?.length === 0 ? <Text variant="meta">No shared classes.</Text> : null}
         {shared.data?.map((item) => {
           const active = item.schedule_id === selected;
@@ -116,7 +116,7 @@ export function StudentHistory({ studentId, scheduleId }: { studentId: string; s
               options={[{ value: '', label: 'All' }, ...(['Present', 'Late', 'Absent'] as const).map((value) => ({ value, label: value }))]}
               onChange={setFilter}
             />
-            {sessions.isPending ? <Text variant="muted">Loading...</Text> : null}
+            {sessions.isPending ? <Loading /> : null}
             {sessions.data && held.length === 0 ? <Text variant="meta">No sessions held yet. Finished sessions and their attendance show here.</Text> : null}
             {held.length > 0 && items.length === 0 ? <Text variant="meta">No sessions match.</Text> : null}
             {items.map(({ session, status, row }) => (

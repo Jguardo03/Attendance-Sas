@@ -6,13 +6,15 @@ import Head from 'expo-router/head';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
-import { Screen, Text } from '@/components/ui';
+import { Loading, Screen } from '@/components/ui';
+import { addWebStyles } from '@/lib/web-styles';
 import { AuthProvider, useAuth } from '@/providers/auth';
 import { QueryProvider } from '@/providers/query-provider';
 import { appTheme } from '@/theme/navigation-theme';
 
 // Keep the splash screen up until Inter is loaded, so text never flashes in the system font.
 void SplashScreen.preventAutoHideAsync();
+addWebStyles();
 
 function RootNavigator() {
   const { status } = useAuth();
@@ -22,7 +24,7 @@ function RootNavigator() {
   if (status === 'loading') {
     return (
       <Screen standalone title="Attendancely">
-        <Text variant="muted">Loading...</Text>
+        <Loading />
       </Screen>
     );
   }

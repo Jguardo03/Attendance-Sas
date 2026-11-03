@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
-import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
+import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, Loading } from '@/components/ui';
 import { markCheckInStart } from '@/features/check-in/timing';
 import { TeachingSessionPanel } from '@/features/teaching/teaching-session-panel';
 import { useAuth } from '@/providers/auth';
@@ -54,7 +54,7 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  if (session.isPending) return <Screen standalone title="Session details" header={<ScreenHeader title="Session details" onBack={goBack} />}><Text variant="muted">Loading...</Text></Screen>;
+  if (session.isPending) return <Screen standalone title="Session details" header={<ScreenHeader title="Session details" onBack={goBack} />}><Loading /></Screen>;
   if (!session.data) return <Screen standalone title="Session details" header={<ScreenHeader title="Session details" onBack={goBack} />}><Text variant="error">This session was not found.</Text></Screen>;
 
   const data = session.data;
@@ -140,7 +140,7 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
 
       {isStudent ? (
         <Card title={`Session attendees (${people.length})`}>
-          {attendees.isPending ? <Text variant="muted">Loading...</Text> : null}
+          {attendees.isPending ? <Loading /> : null}
           {people.length > 0 ? (
             <View className="flex-row flex-wrap items-center gap-1">
               {people.slice(0, PREVIEW).map((person, index) => (

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Badge, Checkbox, Text } from '@/components/ui';
+import { Badge, Checkbox, Text, Loading } from '@/components/ui';
 
 import { listAvailability } from '../api';
 import type { FormValues } from '../form';
@@ -51,7 +51,7 @@ export function LocationPicker({
     <View className="gap-2" accessibilityRole="radiogroup" accessibilityLabel="Location">
       <Text variant="meta" className="font-inter-medium">Location *</Text>
       {!ready ? <Text variant="muted">Choose the period, day and times to see which locations are free.</Text> : null}
-      {ready && availability.isPending ? <Text variant="muted">Checking locations...</Text> : null}
+      {ready && availability.isPending ? <Loading label="Checking locations..." /> : null}
       {ready && availability.isError ? <Text variant="error">Could not check availability.</Text> : null}
       {ready ? <Checkbox label="Show free locations only" checked={freeOnly} onChange={() => setFreeOnly((current) => !current)} /> : null}
       {rows.map((row) => {
