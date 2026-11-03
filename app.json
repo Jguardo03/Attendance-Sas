@@ -1,18 +1,15 @@
 {
   "expo": {
-    "name": "Attendance SAS",
+    "name": "Attendancely",
     "slug": "attendance-sas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "attendancesas",
-    "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
+    "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#015C93",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -25,14 +22,14 @@
       "bundler": "metro"
     },
     "plugins": [
-      ["expo-camera", { "cameraPermission": "Allow Attendance SAS to use the camera to read the QR code shown in the room." }],
+      ["expo-camera", { "cameraPermission": "Allow Attendancely to use the camera to read the QR code shown in the room." }],
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#015C93",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ]
     ],

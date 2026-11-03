@@ -1,4 +1,4 @@
-# Attendance SAS
+# Attendancely
 
 Academic attendance portal: students check in to classes by Bluetooth beacon, NFC or QR code; lecturers view and correct attendance; admins manage everything. One TypeScript codebase for web, iOS and Android (Expo Router, NativeWind, TanStack Query, Supabase, Netlify).
 
