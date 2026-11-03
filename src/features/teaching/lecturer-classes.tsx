@@ -2,9 +2,12 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Card, Screen, Select, Text } from '@/components/ui';
+import { ClassArtwork } from '@/components/class-artwork';
+import { ProgressRing } from '@/components/charts';
+import { Card, EmptyState, Grid, Screen, SegmentedTabs, Text } from '@/components/ui';
 import { slotLabel } from '@/features/sessions/format';
 import { useClassSummaries, useSchedules, useSessionTotals, type ClassSummary, type ScheduleOverview } from '@/features/sessions/queries';
+import { shadows } from '@/theme/tokens';
 
 function belowText(count: number) {
   return count === 0 ? 'No students below 75%' : `${count} student${count === 1 ? '' : 's'} below 75%`;
@@ -22,36 +25,53 @@ function ClassCard({
   previous: boolean;
 }) {
   const router = useRouter();
+  const average = summary && summary.class_average_pct !== null ? Number(summary.class_average_pct) : null;
+  const below = Number(summary?.students_below_75 ?? 0);
+
   return (
-    <Pressable accessibilityRole="link" accessibilityLabel={schedule.class_name} onPress={() => router.push(`/class/${schedule.schedule_id}`)}>
-      <Card>
-        <Text variant="heading">{schedule.class_name}</Text>
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={schedule.class_name}
+      onPress={() => router.push(`/class/${schedule.schedule_id}`)}
+      className="flex-row items-center gap-3 rounded-card bg-surface p-3 active:opacity-90"
+      style={{ boxShadow: shadows.card }}>
+      <View className="h-16 w-16 overflow-hidden rounded-block">
+        <ClassArtwork classId={schedule.class_id} />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text variant="card">{schedule.class_name}</Text>
         {previous ? (
-          <Text variant="muted">
+          <Text variant="meta">
             {schedule.period_name}
             {summary ? ` · ${summary.enrolled} enrolled` : ''}
           </Text>
         ) : (
           <>
-            <Text variant="muted">
+            <Text variant="meta">
               {slotLabel(schedule.week_day, schedule.start_time, schedule.end_time)}
               {schedule.location_name ? ` · ${schedule.location_name}` : ''}
             </Text>
             {summary ? (
-              <Text variant="muted">
+              <Text variant="meta">
                 {summary.enrolled} enrolled{totals ? ` · ${totals.held} of ${totals.total} sessions held` : ''}
               </Text>
             ) : null}
-            {summary ? <Text variant="muted">{belowText(Number(summary.students_below_75))}</Text> : null}
           </>
         )}
-      </Card>
+        {summary ? (
+          <Text variant={below > 0 ? 'error' : 'meta'} className={below > 0 ? 'font-inter-semibold' : ''}>
+            {belowText(below)}
+          </Text>
+        ) : null}
+      </View>
+      <ProgressRing value={average} size={52} label="Class average" />
     </Pressable>
   );
 }
 
-// Lecturer Classes: "My classes" for the current period with enrolment, sessions held and who is below 75%,
-// and earlier periods' classes. The schedules are the lecturer's own because of row level security.
+// Lecturer Classes (Lecturer UI pages 3 and 4): "Active period" with each class's enrolment, sessions held, who is
+// below 75% and the class average as a ring, and earlier periods' classes. The schedules are the lecturer's own
+// because of row level security.
 export function LecturerClasses() {
   const [tab, setTab] = useState<'current' | 'previous'>('current');
   const schedules = useSchedules();
@@ -64,12 +84,12 @@ export function LecturerClasses() {
 
   return (
     <Screen title="Classes">
-      <Select
+      <SegmentedTabs
         label="Show"
         value={tab}
         options={[
-          { value: 'current', label: 'My classes' },
-          { value: 'previous', label: 'Previous classes' },
+          { value: 'current', label: 'Active period' },
+          { value: 'previous', label: 'Previous periods' },
         ]}
         onChange={(value) => setTab(value as 'current' | 'previous')}
       />
@@ -77,17 +97,28 @@ export function LecturerClasses() {
       {schedules.isError ? <Text variant="error">Could not load your classes.</Text> : null}
       {schedules.data && shown.length === 0 ? (
         <Card>
-          <Text variant="muted">{tab === 'current' ? 'You are not teaching any current classes.' : 'No previous classes.'}</Text>
+          <EmptyState
+            image="classes"
+            title={tab === 'current' ? 'No classes this period' : 'No previous classes'}
+            message={tab === 'current' ? 'You are not teaching any current classes.' : 'Classes from earlier periods show here.'}
+          />
         </Card>
       ) : null}
       {groups.map((group) => {
         const [period, status] = group.split('|');
+        const inGroup = shown.filter((schedule) => `${schedule.period_name}|${schedule.period_status}` === group);
+        const students = inGroup.reduce((sum, schedule) => sum + Number(summaries.data?.get(schedule.schedule_id)?.enrolled ?? 0), 0);
         return (
           <View key={group} className="gap-3">
-            {tab === 'current' ? <Text variant="heading">{`${period} (${status})`}</Text> : null}
-            {shown
-              .filter((schedule) => `${schedule.period_name}|${schedule.period_status}` === group)
-              .map((schedule) => (
+            <View className="gap-0.5">
+              {tab === 'current' ? <Text variant="section">{`${period} (${status})`}</Text> : null}
+              <Text variant="meta">
+                {inGroup.length} class{inGroup.length === 1 ? '' : 'es'}
+                {summaries.data ? ` · ${students} students` : ''}
+              </Text>
+            </View>
+            <Grid>
+              {inGroup.map((schedule) => (
                 <ClassCard
                   key={schedule.schedule_id}
                   schedule={schedule}
@@ -96,6 +127,7 @@ export function LecturerClasses() {
                   previous={tab === 'previous'}
                 />
               ))}
+            </Grid>
           </View>
         );
       })}

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Screen, Text } from '@/components/ui';
+import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
 import { QrCode } from '@/components/qr-code';
 import { FunctionCallError } from '@/lib/functions';
 
@@ -20,8 +20,9 @@ function problemText(error: unknown): string {
   return 'The code could not be loaded. Check the connection and try again.';
 }
 
-// The code a room shows on a projector or tablet. It changes every 30 seconds; the page asks the server for the next
-// one when the old one runs out and shows a countdown. Asked for by session (lecturer, admin) or by room (admin).
+// The code a room shows on a projector or tablet (Lecturer UI page 11). It changes every 30 seconds; the page asks the
+// server for the next one when the old one runs out and shows a countdown. Asked for by session (lecturer, admin) or by
+// room (admin). The code itself stays plain black on white so cameras can read it.
 export function RoomQrDisplay({ sessionId, locationId }: { sessionId?: number; locationId?: number }) {
   const router = useRouter();
   const qr = useQuery({
@@ -46,9 +47,7 @@ export function RoomQrDisplay({ sessionId, locationId }: { sessionId?: number; l
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   return (
-    <Screen standalone title="Room QR code">
-      <Button variant="secondary" label="Back" onPress={back} />
-
+    <Screen standalone title="Room QR code" header={<ScreenHeader title="Room QR code" subtitle={qr.data?.location_name} onBack={back} />}>
       {qr.isPending ? <Text variant="muted">Loading the code...</Text> : null}
 
       {qr.error && !qr.data ? (
@@ -59,15 +58,20 @@ export function RoomQrDisplay({ sessionId, locationId }: { sessionId?: number; l
       ) : null}
 
       {qr.data ? (
-        <View className="items-center gap-4">
-          <Text variant="title">{qr.data.location_name}</Text>
-          <QrCode value={qr.data.payload} size={320} label={`Check in code for ${qr.data.location_name}`} />
-          <Badge label={`Changes in ${left} s`} tone={left > 5 ? 'neutral' : 'warning'} />
-          <Text variant="muted">Students scan this code with the app to check in. Do not share a picture of it.</Text>
-          {qr.error ? <Text variant="error">{problemText(qr.error)}</Text> : null}
-          {/* Development builds only: the text of the code, for the paste box on the check in screen. */}
-          {__DEV__ ? <Text variant="muted" selectable>{qr.data.payload}</Text> : null}
-        </View>
+        <Card>
+          <View className="items-center gap-4 py-2">
+            <Text variant="title">Scan to check in</Text>
+            <Text variant="section">{qr.data.location_name}</Text>
+            <QrCode value={qr.data.payload} size={320} label={`Check in code for ${qr.data.location_name}`} />
+            <Badge label={`Changes in ${left} s`} tone={left > 5 ? 'neutral' : 'warning'} />
+            <Text variant="meta" className="text-center">
+              Students scan this code with the app to check in. Do not share a picture of it.
+            </Text>
+            {qr.error ? <Banner tone="error" message={problemText(qr.error)} /> : null}
+            {/* Development builds only: the text of the code, for the paste box on the check in screen. */}
+            {__DEV__ ? <Text variant="meta" selectable>{qr.data.payload}</Text> : null}
+          </View>
+        </Card>
       ) : null}
     </Screen>
   );

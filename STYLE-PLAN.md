@@ -343,6 +343,23 @@ No change to queries, routes, copy that tests assert, or the check-in orchestrat
 
 Do not alter `change_attendance` payloads, the realtime hook or the focus refetch; keep the QR code white on black for scanning (no tinted QR).
 
+### Phase 6 results (done 2026-11-04)
+
+- **Rebuilt, with every query, route, payload and the realtime hook unchanged:**
+  - **Home** (`teaching/lecturer-home.tsx`): avatar, date and "Hi, [first name]"; a blue banner with "Live now", the class, a ring, "18 of 24 checked in · 3 late so far" and Open live session; "Today's sessions" cards; a "N students below 75%" card with See classes; "Coming up" (Rescheduled pill); same two-column layout from 1280 px as the student Home.
+  - **Classes:** "Active period | Previous periods" tabs, cards with artwork, slot, enrolled, sessions held, red "N students below 75%" and the class average as a ring.
+  - **Class details** (shared with admin): back header, blue banner with the class average ring, info card, Students | Upcoming | Previous tabs, student rows with avatar and "46% Below 75%" / "92% On track" pills, "No students enrolled yet" empty state.
+  - **Session panel:** blue banner with the ring and "15 present · 3 late · 6 not yet" (Absent once finished), "Check in opens at 12:50" before it opens, a cancelled banner, attendee rows with avatars and attendance pills.
+  - **Room QR:** back header, "Scan to check in", the code unchanged (black on white), countdown pill.
+  - **Attendance record, Change attendance, confirmation:** centred avatar and pill, label/value rows, "Need to correct this?" card, three status tiles (Present, Late, Absent) with icons, disabled Method box, reason area; save still needs a reason and the second step.
+  - **Student history:** avatar, shared class picker with a tick, blue banner with the ring, rows with pills.
+  - **Calendar:** a lecturer's day shows the teaching cards with live figures. **Profile:** classes, students and average for a lecturer, plus the "Lecturers don't check in" note.
+- **New small pieces:** `useLecturerOverview` (classes, students, below 75%, average), used by Home and Profile; `TeachingSessionCard` is restyled and shared with admin (progress bar and pill; same figures).
+- **Fix found while checking:** `Card` called `Image.resolveAssetSource`, which react-native-web does not have, so the student Home crashed on web while a session was live. It now falls back to the 4:1 ratio.
+- **Tests:** 8 new in `lecturer-screens.test.tsx` and a status tile test in `attendance-edit.test.tsx` (291 in total; typecheck and lint pass). Four assertions in `attendance-edit.test.tsx` changed with the new label/value rows (same facts).
+- **Verified:** web at 1440 px as the demo lecturer with a temporary live session: Home, Session, Room QR (error state only, QR is off for that room), Attendance record, Change attendance (blocked without a reason, then the confirmation), Class details, Classes, Student, Calendar, Profile. The temporary change was reverted.
+- **Not verified:** the Android emulator and iOS, the Room QR success layout, the final save of a change (it is permanent), the phone layout of these screens.
+
 ---
 
 ## Phase 7: Admin screens and reports

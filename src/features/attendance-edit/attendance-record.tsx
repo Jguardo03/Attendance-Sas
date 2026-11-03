@@ -1,11 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { Badge, Button, Card, Screen, Select, Text, TextField, TimeField, useScrollUpOn } from '@/components/ui';
+import { Avatar } from '@/components/avatar';
+import { Icon, type IconName } from '@/components/icon';
+import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, TextField, TimeField, useScrollUpOn } from '@/components/ui';
 import {
+  attendancePill,
   formatDayLong,
+  formatDayShort,
+  hhmm,
   melbourneDateTime,
   melbourneTime,
   methodLabel,
@@ -21,6 +26,7 @@ import {
   type AttendanceRecord as RecordRow,
   type StudentInfo,
 } from '@/features/sessions/queries';
+import type { ColorToken } from '@/theme/tokens';
 import { useAuth } from '@/providers/auth';
 
 import { changeAttendance } from './api';
@@ -37,12 +43,54 @@ import {
   type EditableStatus,
 } from './logic';
 
-const tone = (status: string | null | undefined) => (status === 'present' ? 'success' : status === 'late' ? 'warning' : status === 'absent' ? 'danger' : 'neutral');
-
 type Mode = 'view' | 'edit' | 'confirm';
+
+// The three status tiles: written out in full so the styling tool can see the class names.
+const tiles: Record<EditableStatus, { on: string; text: string; icon: IconName; color: ColorToken }> = {
+  present: { on: 'border-success bg-success-tint', text: 'text-success-strong', icon: 'checkCircle', color: 'successStrong' },
+  late: { on: 'border-warning bg-warning-tint', text: 'text-warning-content', icon: 'clock', color: 'warningContent' },
+  absent: { on: 'border-danger bg-danger-tint', text: 'text-danger-strong', icon: 'close', color: 'dangerStrong' },
+};
+
+function StatusTiles({ value, onChange }: { value: EditableStatus; onChange: (value: EditableStatus) => void }) {
+  return (
+    <View className="gap-1" accessibilityRole="radiogroup" accessibilityLabel="Status">
+      <Text variant="meta" className="font-inter-medium">
+        Status
+      </Text>
+      <View className="flex-row gap-2">
+        {statusChoices.map((choice) => {
+          const selected = choice.value === value;
+          const tile = tiles[choice.value];
+          return (
+            <Pressable
+              key={choice.value}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              onPress={() => onChange(choice.value)}
+              className={`min-h-20 flex-1 items-center justify-center gap-1 rounded-block border-2 active:opacity-80 ${selected ? tile.on : 'border-border bg-surface'}`}>
+              <Icon name={tile.icon} size={24} color={selected ? tile.color : 'contentMuted'} />
+              <Text className={`font-inter-semibold ${selected ? tile.text : ''}`}>{choice.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-center justify-between gap-3">
+      <Text variant="meta">{label}</Text>
+      <Text className="flex-1 text-right">{value}</Text>
+    </View>
+  );
+}
 
 // One student's attendance in one session, and the Change attendance flow (also how a lecturer checks a student in by
 // hand): edit status, time and a required reason, then confirm. The database enforces who may change what.
+// Lecturer UI pages 16 to 21.
 export function AttendanceRecord({ sessionId, studentId, startEditing = false }: { sessionId: number; studentId: string; startEditing?: boolean }) {
   const router = useRouter();
   const session = useSession(sessionId);
@@ -50,9 +98,9 @@ export function AttendanceRecord({ sessionId, studentId, startEditing = false }:
   const student = useStudentInfo(studentId);
   const history = useAttendanceHistory(studentId, sessionId);
 
-  const back = <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
-  if (session.isPending || record.isPending || student.isPending) return <Screen standalone title="Attendance record">{back}<Text variant="muted">Loading...</Text></Screen>;
-  if (!session.data || !student.data) return <Screen standalone title="Attendance record">{back}<Text variant="error">This record was not found.</Text></Screen>;
+  const header = <ScreenHeader title="Attendance record" onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
+  if (session.isPending || record.isPending || student.isPending) return <Screen standalone title="Attendance record" header={header}><Text variant="muted">Loading...</Text></Screen>;
+  if (!session.data || !student.data) return <Screen standalone title="Attendance record" header={header}><Text variant="error">This record was not found.</Text></Screen>;
 
   return <RecordBody session={session.data} person={student.data} current={record.data ?? null} history={history} startEditing={startEditing} />;
 }
@@ -88,11 +136,12 @@ function RecordBody({
   const [saved, setSaved] = useState(false);
   useScrollUpOn(failure);
 
-  const back = <Button variant="secondary" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />;
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const shownStatus = current?.status ?? (data.status === 'finished' ? 'absent' : null);
   const last = history.data?.[0];
-  const lastChanged = last ? `${last.changed_by_name ?? 'System'}, ${melbourneDateTime(last.changed_at)}` : '-';
+  const lastChanged = last ? `Last changed by ${last.changed_by_name ?? 'System'}, ${melbourneDateTime(last.changed_at)}` : '';
   const attended = current !== null && current.status !== 'absent';
+  const fullName = `${person.first_name} ${person.last_name}`;
 
   const startChange = () => {
     setStatus(attended ? (current as RecordRow).status : 'present');
@@ -125,119 +174,135 @@ function RecordBody({
     setMode('view');
   };
 
-  const heading = (
-    <View className="flex-row items-center justify-between gap-2">
-      <View className="flex-1">
-        <Text variant="heading">
-          {person.first_name} {person.last_name}
-        </Text>
-        <Text variant="muted">{person.id}</Text>
-      </View>
-      <Badge label={statusWord(shownStatus)} tone={tone(shownStatus)} />
-    </View>
-  );
-
   const sessionLine = `${formatDayLong(data.session_date)} · ${timeRange(data)}${data.location_name ? ` · ${data.location_name}` : ''}`;
+  const shortSession = `${formatDayShort(data.session_date)} ${hhmm(data.start_time)}`;
 
   if (mode === 'edit') {
     return (
-      <Screen standalone title="Change attendance">
-        {failure ? (
-          <Card>
-            <Text variant="error">{failure}</Text>
-          </Card>
-        ) : null}
+      <Screen standalone title="Change attendance" header={<ScreenHeader title="Change attendance" subtitle={`${fullName} · ${shortSession}`} onBack={() => setMode('view')} />}>
+        {failure ? <Banner tone="error" message={failure} /> : null}
         <Card>
-          <Text variant="heading">
-            {person.first_name} {person.last_name}
-          </Text>
-          <Text variant="muted">
-            {data.class_name} · {sessionLine}
-          </Text>
+          <View className="flex-row items-center gap-3">
+            <Avatar name={fullName} id={person.id} size={44} />
+            <View className="flex-1">
+              <Text variant="card">{fullName}</Text>
+              <Text variant="meta">
+                {data.class_name} · {sessionLine}
+              </Text>
+            </View>
+          </View>
         </Card>
-        <Select label="Status" value={status} options={statusChoices} onChange={(value) => setStatus(value as EditableStatus)} />
-        {status !== 'absent' ? <TimeField label="Checked in at" value={time} onChange={setTime} error={errors.time} /> : null}
-        <Text variant="muted">Method: {status === 'absent' ? '-' : 'Manual (set automatically)'}</Text>
-        <TextField
-          label="Reason (required)"
-          value={reason}
-          onChangeText={setReason}
-          maxLength={REASON_MAX}
-          multiline
-          error={errors.reason}
-          placeholder="Why is this changing?"
-        />
-        <Text variant="muted">{changeSentence(current?.status, status, !(current && current.status === status && (status === 'absent' || time === defaultTime(data, current.checked_in_at))))}</Text>
-        <Button label="Save change" onPress={review} />
-        <Button variant="secondary" label="Cancel" onPress={() => setMode('view')} />
+        <Card>
+          <StatusTiles value={status} onChange={setStatus} />
+          <View className="gap-3 md:flex-row">
+            {status !== 'absent' ? (
+              <View className="md:flex-1">
+                <TimeField label="Checked in at" value={time} onChange={setTime} error={errors.time} />
+              </View>
+            ) : null}
+            <View className="gap-1 md:flex-1">
+              <Text variant="meta" className="font-inter-medium">
+                Method
+              </Text>
+              <View className="min-h-11 justify-center rounded-button border border-border bg-surface-muted px-3">
+                <Text variant="meta">{status === 'absent' ? '-' : 'Manual (automatic)'}</Text>
+              </View>
+            </View>
+          </View>
+          <TextField
+            label="Reason (required)"
+            value={reason}
+            onChangeText={setReason}
+            maxLength={REASON_MAX}
+            multiline
+            error={errors.reason}
+            placeholder="e.g. Phone battery died, confirmed present in class"
+          />
+          <Text variant="meta">{changeSentence(current?.status, status, !(current && current.status === status && (status === 'absent' || time === defaultTime(data, current.checked_in_at))))}</Text>
+        </Card>
+        <View className="gap-2 md:flex-row-reverse">
+          <View className="md:w-48">
+            <Button label="Save change" onPress={review} />
+          </View>
+          <View className="md:w-48">
+            <Button variant="secondary" label="Cancel" onPress={() => setMode('view')} />
+          </View>
+        </View>
       </Screen>
     );
   }
 
   if (mode === 'confirm') {
     return (
-      <Screen standalone title="Save this change?">
+      <Screen standalone title="Save this change?" header={<ScreenHeader title="Save this change?" subtitle={`${data.class_name}, ${shortSession}`} onBack={() => setMode('edit')} />}>
         <Card>
-          <Text>
-            {data.class_name}, {formatDayLong(data.session_date)} {timeRange(data).slice(0, 5)}
-          </Text>
-          <Text variant="muted">
-            Student: {person.first_name} {person.last_name} · {person.id}
-          </Text>
-          <Text variant="muted">
-            Status: {statusWord(current?.status)} → {statusWord(status)}
-          </Text>
-          <Text variant="muted">Checked in: {checkedInSummary(status, time)}</Text>
-          <Text variant="muted">Reason: {reason.trim()}</Text>
+          <Row label="Student" value={`${fullName} · ${person.id}`} />
+          <Row label="Status" value={`${statusWord(current?.status)} → ${statusWord(status)}`} />
+          <Row label="Checked in" value={checkedInSummary(status, time)} />
+          <Row label="Reason" value={reason.trim()} />
         </Card>
-        <Text variant="muted">Saved with your name. Session and class percentages update.</Text>
-        <Button label={saving ? 'Saving...' : 'Save change'} disabled={saving} onPress={save} />
-        <Button variant="secondary" label="Back to edit" disabled={saving} onPress={() => setMode('edit')} />
+        <Text variant="meta">Saved with your name. Session and class percentages update.</Text>
+        <View className="gap-2 md:flex-row-reverse">
+          <View className="md:w-48">
+            <Button label={saving ? 'Saving...' : 'Save change'} disabled={saving} onPress={save} />
+          </View>
+          <View className="md:w-48">
+            <Button variant="secondary" label="Back to edit" disabled={saving} onPress={() => setMode('edit')} />
+          </View>
+        </View>
       </Screen>
     );
   }
 
   return (
-    <Screen standalone title="Attendance record">
-      {back}
-      {saved ? (
-        <Card>
-          <Text>The change was saved with your name.</Text>
-        </Card>
-      ) : null}
+    <Screen standalone title="Attendance record" header={<ScreenHeader title="Attendance record" subtitle={data.class_name} onBack={goBack} />}>
+      {saved ? <Banner tone="success" message="The change was saved with your name." /> : null}
       <Card>
-        {heading}
-        <Text variant="muted">Class: {data.class_name}</Text>
-        <Text variant="muted">Session: {sessionLine}</Text>
-        <Text variant="muted">Status: {statusWord(shownStatus)}</Text>
-        <Text variant="muted">Checked in at: {melbourneTime(current?.checked_in_at) || '-'}</Text>
-        <Text variant="muted">Method: {methodLabel(current?.check_in_method ?? null)}</Text>
-        <Text variant="muted">Comments: {current?.comments || '-'}</Text>
-        <Text variant="muted">Last changed: {lastChanged}</Text>
+        <View className="items-center gap-1">
+          <Avatar name={fullName} id={person.id} size={72} />
+          <Text variant="title" className="mt-2">
+            {fullName}
+          </Text>
+          <Text variant="meta">
+            {person.id}
+            {person.email ? ` · ${person.email}` : ''}
+          </Text>
+          <View className="mt-1">
+            <Badge label={statusWord(shownStatus)} {...attendancePill(statusWord(shownStatus))} />
+          </View>
+        </View>
       </Card>
 
-      {editable ? (
-        <Card>
-          <Text variant="muted">You can change records for sessions that have started or finished. Every change needs a reason and is saved with your name.</Text>
-          <Button label={!attended && data.status === 'started' ? 'Check in manually' : 'Change attendance'} onPress={startChange} />
-        </Card>
-      ) : (
-        <Card>
-          <Text variant="muted">
+      <Card>
+        <Row label="Session" value={sessionLine} />
+        <Row label="Checked in at" value={melbourneTime(current?.checked_in_at) || '-'} />
+        <Row label="Method" value={methodLabel(current?.check_in_method ?? null)} />
+        <Row label="Comments" value={current?.comments || '-'} />
+        {lastChanged ? <Text variant="meta">{lastChanged}</Text> : null}
+      </Card>
+
+      <Card title="Need to correct this?">
+        {editable ? (
+          <>
+            <Text variant="meta">You can change records for sessions that have started or finished. Every change needs a reason and is saved with your name.</Text>
+            <Button label={!attended && data.status === 'started' ? 'Check in manually' : 'Change attendance'} onPress={startChange} />
+          </>
+        ) : (
+          <Text variant="meta">
             {data.status === 'cancelled'
               ? 'This session is cancelled, so its attendance cannot be changed.'
               : data.status === 'started' || data.status === 'finished'
                 ? 'Only the lecturer of this session or an admin can change this record.'
                 : 'Attendance can be changed once the session has started.'}
           </Text>
-        </Card>
-      )}
+        )}
+      </Card>
 
       <Button variant="secondary" label="View student's attendance" onPress={() => router.push(`/student/${person.id}?schedule=${data.schedule_id}`)} />
 
       <Card title="History">
         {history.isPending ? <Text variant="muted">Loading...</Text> : null}
-        {history.data && history.data.length === 0 ? <Text variant="muted">No changes recorded.</Text> : null}
+        {history.data && history.data.length === 0 ? <Text variant="meta">No changes recorded.</Text> : null}
         {history.data?.map((row, index) => (
           <View key={`${row.changed_at}-${index}`} className="gap-1 border-t border-border pt-2">
             <Text>
@@ -245,10 +310,10 @@ function RecordBody({
               {row.new_checked_in_at ? ` · ${melbourneTime(row.new_checked_in_at)}` : ''}
               {row.new_check_in_method ? ` · ${methodLabel(row.new_check_in_method as RecordRow['check_in_method'])}` : ''}
             </Text>
-            <Text variant="muted">
+            <Text variant="meta">
               {row.changed_by_name ?? 'System'}, {melbourneDateTime(row.changed_at)}
             </Text>
-            {row.reason ? <Text variant="muted">Reason: {row.reason}</Text> : null}
+            {row.reason ? <Text variant="meta">Reason: {row.reason}</Text> : null}
           </View>
         ))}
       </Card>

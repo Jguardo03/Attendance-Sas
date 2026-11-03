@@ -5,9 +5,11 @@ import { View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { Icon, type IconName } from '@/components/icon';
 import { Button, Card, Screen, Text } from '@/components/ui';
+import { audienceOf } from '@/features/sessions/audience';
 import { roleLabel } from '@/features/shell/nav';
 import { SignOutConfirm } from '@/features/shell/sign-out-confirm';
 import { useMyProfile } from '@/features/shell/use-my-profile';
+import { useLecturerOverview } from '@/features/teaching/lecturer-overview';
 import { useAuth } from '@/providers/auth';
 
 // What each check in method is for, shown to students (Student UI page 40). Information only until the methods are built.
@@ -23,6 +25,29 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <Text variant="meta">{label}</Text>
       <Text className="flex-1 text-right">{value}</Text>
     </View>
+  );
+}
+
+// A lecturer's three numbers (Lecturer UI page 26): classes this period, students in them, and the average attendance.
+function LecturerStats() {
+  const overview = useLecturerOverview();
+  if (!overview.ready) return null;
+  const stats = [
+    { value: String(overview.classes), label: 'classes' },
+    { value: String(overview.students), label: 'students' },
+    { value: overview.average === null ? '-' : `${overview.average}%`, label: 'average' },
+  ];
+  return (
+    <Card>
+      <View className="flex-row">
+        {stats.map((stat) => (
+          <View key={stat.label} className="flex-1 items-center" accessibilityLabel={`${stat.value} ${stat.label}`} accessible>
+            <Text variant="title">{stat.value}</Text>
+            <Text variant="meta">{stat.label}</Text>
+          </View>
+        ))}
+      </View>
+    </Card>
   );
 }
 
@@ -53,6 +78,8 @@ export default function ProfileScreen() {
       {profile.isPending ? <Text variant="muted">Loading...</Text> : null}
       {profile.isError ? <Text variant="error">Could not load your profile.</Text> : null}
 
+      {audienceOf(can) === 'lecturer' ? <LecturerStats /> : null}
+
       {can('attendance.check_in') ? (
         <Card title="Check-in permissions">
           {permissions.map((item) => (
@@ -76,6 +103,8 @@ export default function ProfileScreen() {
           {claims?.role ? <InfoRow label="Role" value={roleLabel(claims.role)} /> : null}
         </Card>
       ) : null}
+
+      {audienceOf(can) === 'lecturer' ? <Text variant="meta">Lecturers don&apos;t check in, so no device permissions are needed.</Text> : null}
 
       {confirming ? <SignOutConfirm onCancel={() => setConfirming(false)} /> : <Button variant="secondary" label="Sign out" onPress={() => setConfirming(true)} />}
       {__DEV__ ? <Button variant="ghost" label="Dev: UI gallery" onPress={() => router.push('/dev/ui')} /> : null}

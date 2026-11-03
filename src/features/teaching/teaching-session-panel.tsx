@@ -2,27 +2,19 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Card, Dropdown, Text, TextField } from '@/components/ui';
+import { Avatar } from '@/components/avatar';
+import { ProgressRing } from '@/components/charts';
+import { Badge, Banner, Button, Card, Dropdown, Text, TextField } from '@/components/ui';
 import { canChangeAttendance } from '@/features/attendance-edit/logic';
-import { checkedInAt, hhmm, methodLabel, type Session } from '@/features/sessions/format';
+import { attendancePill, checkedInAt, hhmm, methodLabel, type Session } from '@/features/sessions/format';
 import { useAttendanceList } from '@/features/sessions/queries';
 import { useAttendanceRealtime } from '@/features/sessions/realtime';
 import { attendeeStatus, type AttendeeStatus } from '@/features/sessions/teaching';
 import { useAuth } from '@/providers/auth';
 
-function Figure({ value, label }: { value: string | number; label: string }) {
-  return (
-    <View className="min-w-[44%] flex-1 gap-1 rounded-lg border border-border bg-surface p-4" accessibilityLabel={`${label}: ${value}`}>
-      <Text variant="title">{value}</Text>
-      <Text variant="muted">{label}</Text>
-    </View>
-  );
-}
-
-const tone = (status: AttendeeStatus) => (status === 'Present' ? 'success' : status === 'Late' ? 'warning' : status === 'Absent' ? 'danger' : 'neutral');
-
-// The lecturer's and admin's view of one session: the counts and every enrolled student with their status.
-// Each student opens their record, where a lecturer (of this session) or an admin changes it or checks the student in.
+// The lecturer's and admin's view of one session (Lecturer UI pages 9 to 15): the counts in a blue banner and every
+// enrolled student with their status. Each student opens their record, where a lecturer (of this session) or an
+// admin changes it or checks the student in.
 export function TeachingSessionPanel({ session }: { session: Session }) {
   const checkInOpen = session.status !== 'cancelled' && session.status !== 'finished' && session.now_local >= session.check_in_opens_at;
   const router = useRouter();
@@ -66,50 +58,61 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
   return (
     <View className="gap-4">
       {cancelled ? (
-        <Card>
-          <Text variant="muted">This session is cancelled and is not counted in attendance.</Text>
-        </Card>
+        <Banner tone="warning" title="This session was cancelled" message="This session is cancelled and is not counted in attendance." />
       ) : before ? (
-        <Card title="Session attendance">
-          <Text variant="title">{`0/${enrolled}`}</Text>
-          <Text variant="muted">Students can check in from {session.check_in_opens_at.slice(11, 16)}. Counts update live once the session starts.</Text>
+        <Card title={`Check in opens at ${session.check_in_opens_at.slice(11, 16)}`}>
+          <Text variant="meta">Students can check in 10 minutes before the start. Counts update live once the session starts.</Text>
+          <Text variant="card">{`0 of ${enrolled} checked in`}</Text>
         </Card>
-      ) : over ? (
-        <View className="flex-row flex-wrap gap-3">
-          <Figure value={`${percent}%`} label={`Session attendance (${attended} of ${enrolled} attended)`} />
-          <Figure value={present} label="Present" />
-          <Figure value={late} label="Late" />
-          <Figure value={count('Absent')} label="Absent" />
-        </View>
       ) : (
-        <View className="flex-row flex-wrap gap-3">
-          <Figure value={`${percent}%`} label="Session attendance" />
-          <Figure value={`${attended}/${enrolled}`} label="Checked in" />
-          <Figure value={late} label="Late" />
-        </View>
+        <Card variant="hero">
+          <View className="flex-row items-center gap-4">
+            <View className="rounded-full bg-surface p-1">
+              <ProgressRing value={percent} size={76} strokeWidth={8} label="Session attendance" />
+            </View>
+            <View className="flex-1 gap-0.5">
+              <Text variant="card" className="text-primary-content">
+                Session attendance
+              </Text>
+              <Text className="font-inter-bold text-title text-primary-content">{`${attended} of ${enrolled}`}</Text>
+              <Text className="text-primary-content">
+                {present} present · {late} late · {over ? `${count('Absent')} absent` : `${enrolled - attended} not yet`}
+              </Text>
+            </View>
+          </View>
+        </Card>
       )}
 
-      {can('attendance.edit_all') ? <Text variant="muted">Permission attendance.edit_all: you can change the attendance record of any student in any session.</Text> : null}
+      {can('attendance.edit_all') ? <Text variant="meta">Permission attendance.edit_all: you can change the attendance record of any student in any session.</Text> : null}
 
-      <Card title={`Session attendees (${enrolled})`}>
-        <TextField label="Search" value={search} onChangeText={setSearch} placeholder="Name or student ID" autoCapitalize="none" />
-        <Dropdown label="Status" value={status} options={[{ value: '', label: 'All' }, ...statuses.map((value) => ({ value, label: value }))]} onChange={setStatus} />
+      <Card title={before ? `Enrolled students (${enrolled})` : `Session attendees (${enrolled})`}>
+        <View className="gap-3 md:flex-row">
+          <View className="md:flex-1">
+            <TextField label="Search" value={search} onChangeText={setSearch} placeholder="Name or student ID" autoCapitalize="none" />
+          </View>
+          <View className="md:flex-1">
+            <Dropdown label="Status" value={status} options={[{ value: '', label: 'All' }, ...statuses.map((value) => ({ value, label: value }))]} onChange={setStatus} />
+          </View>
+        </View>
         {list.isPending ? <Text variant="muted">Loading...</Text> : null}
-        {list.data && enrolled === 0 ? <Text variant="muted">No students are enrolled in this class.</Text> : null}
-        {list.data && enrolled > 0 && visible.length === 0 ? <Text variant="muted">No students match.</Text> : null}
+        {list.data && enrolled === 0 ? <Text variant="meta">No students are enrolled in this class.</Text> : null}
+        {list.data && enrolled > 0 && visible.length === 0 ? <Text variant="meta">No students match.</Text> : null}
         {visible.map(({ row, status: label }) => (
-          <View key={row.student_id} className="gap-1 border-t border-border pt-3">
-            <View className="flex-row items-center justify-between gap-2">
-              <Text className="flex-1">
-                {row.first_name} {row.last_name}
-              </Text>
-              <Badge label={label} tone={tone(label)} />
+          <View key={row.student_id} className="gap-2 border-t border-border pt-3">
+            <View className="flex-row items-center gap-3">
+              <Avatar name={`${row.first_name} ${row.last_name}`} id={row.student_id} size={40} />
+              <View className="flex-1 gap-0.5">
+                <Text variant="card">
+                  {row.first_name} {row.last_name}
+                </Text>
+                <Text variant="meta">
+                  {row.student_id}
+                  {row.status === 'present' || row.status === 'late' ? ` · ${checkedInAt({ session_id: session.session_id, status: row.status, checked_in_at: row.checked_in_at, check_in_method: row.check_in_method })} · ${methodLabel(row.check_in_method)}` : ''}
+                </Text>
+              </View>
+              <Badge label={label} {...attendancePill(label)} />
             </View>
-            <Text variant="muted">
-              {row.student_id}
-              {row.status === 'present' || row.status === 'late' ? ` · ${checkedInAt({ session_id: session.session_id, status: row.status, checked_in_at: row.checked_in_at, check_in_method: row.check_in_method })} · ${methodLabel(row.check_in_method)}` : ''}
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap gap-2 pl-[52px]">
               <Button variant="secondary" label="View record" onPress={() => router.push(`/attendance/${session.session_id}/${row.student_id}`)} />
               {editable && session.status === 'started' && label === 'Not checked in' ? (
                 <Button label="Check in manually" onPress={() => router.push(`/attendance/${session.session_id}/${row.student_id}?edit=1`)} />
@@ -118,7 +121,7 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
           </View>
         ))}
       </Card>
-      {session.status === 'rescheduled' ? <Text variant="muted">Moved to {hhmm(session.start_time)}{session.location_name ? `, ${session.location_name}` : ''}.</Text> : null}
+      {session.status === 'rescheduled' ? <Text variant="meta">Moved to {hhmm(session.start_time)}{session.location_name ? `, ${session.location_name}` : ''}.</Text> : null}
     </View>
   );
 }

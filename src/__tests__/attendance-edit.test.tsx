@@ -158,10 +158,24 @@ describe('attendance record screen', () => {
   it('shows the record, who last changed it and the history', async () => {
     await renderRecord();
     expect(screen.getByText('Ada Lovelace')).toBeTruthy();
-    expect(screen.getByText('Status: Absent')).toBeTruthy();
-    expect(screen.getByText(/Last changed: System, 23\/10\/2026 08:30/)).toBeTruthy();
+    expect(screen.getByText('Absent')).toBeTruthy();
+    expect(screen.getByText(/Last changed by System, 23\/10\/2026 08:30/)).toBeTruthy();
     expect(screen.getByText('Change attendance')).toBeTruthy();
     expect(screen.getByText("View student's attendance")).toBeTruthy();
+  });
+
+  it('picks the status with the three tiles, one at a time', async () => {
+    await renderRecord();
+    await fireEvent.press(screen.getByText('Change attendance'));
+    const tile = (name: string) => screen.getByRole('radio', { name });
+    // Absent records start on Present, like the old chips.
+    expect(tile('Present').props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(tile('Late'));
+    expect(tile('Late').props.accessibilityState.checked).toBe(true);
+    expect(tile('Present').props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(tile('Absent'));
+    expect(tile('Absent').props.accessibilityState.checked).toBe(true);
+    expect(screen.queryByLabelText('Checked in at')).toBeNull();
   });
 
   it('says nothing has changed until the status or time differs', async () => {
@@ -196,9 +210,9 @@ describe('attendance record screen', () => {
     await fireEvent.changeText(screen.getByLabelText('Reason (required)'), '  Phone battery died ');
     await fireEvent.press(screen.getByText('Save change'));
     expect(await screen.findByText('Save this change?')).toBeTruthy();
-    expect(screen.getByText('Status: Absent → Present')).toBeTruthy();
-    expect(screen.getByText('Checked in: 07:00 · Manual')).toBeTruthy();
-    expect(screen.getByText('Reason: Phone battery died')).toBeTruthy();
+    expect(screen.getByText('Absent → Present')).toBeTruthy();
+    expect(screen.getByText('07:00 · Manual')).toBeTruthy();
+    expect(screen.getByText('Phone battery died')).toBeTruthy();
     expect(mockRpc).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByText('Save change'));

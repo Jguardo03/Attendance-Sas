@@ -17,7 +17,8 @@ type Variant = 'default' | 'flat' | 'hero';
 // the picture keeps its own pixel size there instead of filling the card. The colour shows while it loads.
 function BannerCard({ image, title, children }: { image: ImageSourcePropType; title?: string; children?: ReactNode }) {
   const [box, setBox] = useState({ width: 0, height: 0 });
-  const size = Image.resolveAssetSource(image);
+  // react-native-web has no resolveAssetSource; the artwork is about 4 to 1, so that is the fallback.
+  const size = Image.resolveAssetSource?.(image);
   const ratio = size?.width && size.height ? size.width / size.height : 4;
   const narrow = box.height > 0 && box.width / box.height < ratio;
 

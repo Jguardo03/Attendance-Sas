@@ -4,16 +4,30 @@ import { Pressable, View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { Button, Card, EmptyState, Grid, Screen, Text } from '@/components/ui';
 import { addDays, formatDayLong, formatDayShort, startOfWeek, weekdayInitials } from '@/lib/dates';
+import { TeachingSessionCard } from '@/features/teaching/teaching-session-card';
 import { useAuth } from '@/providers/auth';
 
 import { SessionCard } from './components/session-card';
-import { useAppNow, useMyAttendance, useSessions } from './queries';
+import type { Session } from './format';
+import { useAppNow, useAttendanceCounts, useMyAttendance, useSessions } from './queries';
 
 function StepButton({ icon, label, onPress }: { icon: 'chevronLeft' | 'chevronRight'; label: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} className="h-10 w-10 items-center justify-center rounded-button border border-border bg-surface active:opacity-80">
       <Icon name={icon} size={20} color="content" />
     </Pressable>
+  );
+}
+
+// A lecturer's day: each session with its live figure ("18 of 24 checked in", "88%", "22 enrolled").
+function TeachingDay({ sessions, first, last }: { sessions: Session[]; first: string; last: string }) {
+  const counts = useAttendanceCounts(first, last, Boolean(first));
+  return (
+    <Grid>
+      {sessions.map((session) => (
+        <TeachingSessionCard key={session.session_id} session={session} counts={counts.data?.get(session.session_id)} />
+      ))}
+    </Grid>
   );
 }
 
@@ -100,11 +114,15 @@ export function WeekCalendar() {
           <EmptyState image="calendar" title="No sessions" message="Nothing is scheduled for this day." />
         </Card>
       ) : null}
-      <Grid>
-        {forDay.map((session) => (
-          <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance={isStudent} />
-        ))}
-      </Grid>
+      {isStudent ? (
+        <Grid>
+          {forDay.map((session) => (
+            <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance />
+          ))}
+        </Grid>
+      ) : (
+        <TeachingDay sessions={forDay} first={first} last={last} />
+      )}
     </Screen>
   );
 }
