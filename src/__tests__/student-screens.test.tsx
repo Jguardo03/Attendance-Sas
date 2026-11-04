@@ -291,6 +291,30 @@ describe('Calendar', () => {
     expect(screen.getByRole('button', { name: 'Thu 5 Nov, 1 sessions' })).toBeSelected();
   });
 
+  it('lists each session as one row with its time, room, status and my attendance, and opens it', async () => {
+    mockSessionsByKey = { week: [session({ status: 'finished' })] };
+    mockAttendance = new Map([[38, { session_id: 38, status: 'late', checked_in_at: '2026-11-03T00:08:00+00:00', check_in_method: 'qr' }]]);
+    await render(<WeekCalendar />);
+    expect(screen.getByText('10:00')).toBeTruthy();
+    expect(screen.getByText('12:00')).toBeTruthy();
+    expect(screen.getByText('Room 1.02')).toBeTruthy();
+    expect(screen.getByText('Finished')).toBeTruthy();
+    expect(screen.getByText('Late')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('link', { name: 'Web Development, Finished' }));
+    expect(mockPush).toHaveBeenCalledWith('/session/38');
+  });
+
+  it('keeps the row on a wide screen, with my attendance at the right', async () => {
+    mockWide = true;
+    mockSessionsByKey = { week: [session({ status: 'finished' })] };
+    mockAttendance = new Map([[38, { session_id: 38, status: 'present', checked_in_at: '2026-11-03T00:08:00+00:00', check_in_method: 'qr' }]]);
+    await render(<WeekCalendar />);
+    expect(screen.getByText('Web Development')).toBeTruthy();
+    expect(screen.getByText('Room 1.02')).toBeTruthy();
+    expect(screen.getByText('Finished')).toBeTruthy();
+    expect(screen.getByText('Present')).toBeTruthy();
+  });
+
   it('moves between weeks', async () => {
     await render(<WeekCalendar />);
     expect(screen.getByText('Mon 2 Nov to Sun 8 Nov')).toBeTruthy();

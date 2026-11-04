@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
-import { Button, Card, EmptyState, Grid, Screen, Text } from '@/components/ui';
+import { Button, Card, EmptyState, Screen, Text } from '@/components/ui';
 import { addDays, formatDayLong, formatDayShort, startOfWeek, weekdayInitials } from '@/lib/dates';
-import { TeachingSessionCard } from '@/features/teaching/teaching-session-card';
 import { useAuth } from '@/providers/auth';
 
-import { SessionCard } from './components/session-card';
+import { SessionRow } from './components/session-row';
 import type { Session } from './format';
 import { useAppNow, useAttendanceCounts, useMyAttendance, useSessions } from './queries';
 
@@ -19,15 +18,15 @@ export function StepButton({ icon, label, onPress }: { icon: 'chevronLeft' | 'ch
   );
 }
 
-// A lecturer's day: each session with its live figure ("18 of 24 checked in", "88%", "22 enrolled").
+// A lecturer's day: one row per session with its live figure ("18 of 24 checked in", "88%", "22 enrolled").
 function TeachingDay({ sessions, first, last }: { sessions: Session[]; first: string; last: string }) {
   const counts = useAttendanceCounts(first, last, Boolean(first));
   return (
-    <Grid>
+    <View className="gap-3">
       {sessions.map((session) => (
-        <TeachingSessionCard key={session.session_id} session={session} counts={counts.data?.get(session.session_id)} />
+        <SessionRow key={session.session_id} session={session} counts={counts.data?.get(session.session_id)} />
       ))}
-    </Grid>
+    </View>
   );
 }
 
@@ -115,11 +114,11 @@ export function WeekCalendar() {
         </Card>
       ) : null}
       {isStudent ? (
-        <Grid>
+        <View className="gap-3">
           {forDay.map((session) => (
-            <SessionCard key={session.session_id} session={session} attendance={attendance.data?.get(session.session_id)} showMyAttendance />
+            <SessionRow key={session.session_id} session={session} student attendance={attendance.data?.get(session.session_id)} />
           ))}
-        </Grid>
+        </View>
       ) : (
         <TeachingDay sessions={forDay} first={first} last={last} />
       )}
