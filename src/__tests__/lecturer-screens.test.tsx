@@ -13,6 +13,7 @@ let mockSummaries = new Map<number, unknown>();
 let mockStudents: unknown[] = [];
 let mockAttendees: unknown[] = [];
 let mockCounts = new Map<number, unknown>();
+let mockWide = false;
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
@@ -21,7 +22,7 @@ jest.mock('expo-router', () => ({
 jest.mock('@/providers/auth', () => ({
   useAuth: () => ({ claims: { appUserId: 'L1000002', role: 'lecturer' }, can: (key: string) => key === 'sessions.manage_own' || key === 'attendance.edit' }),
 }));
-jest.mock('@/features/shell/nav', () => ({ ...jest.requireActual('@/features/shell/nav'), useIsExtraWide: () => false }));
+jest.mock('@/features/shell/nav', () => ({ ...jest.requireActual('@/features/shell/nav'), useIsWide: () => mockWide, useIsExtraWide: () => mockWide }));
 jest.mock('@/features/shell/use-my-profile', () => ({
   useMyProfile: () => ({ data: { id: 'L1000002', first_name: 'Omar', last_name: 'Park', email: 'l1000002@mailinator.com' }, isPending: false }),
 }));
@@ -88,6 +89,7 @@ beforeEach(() => {
   mockStudents = [];
   mockAttendees = [];
   mockCounts = new Map();
+  mockWide = false;
 });
 
 describe('Lecturer Home', () => {
@@ -157,6 +159,39 @@ describe('Class details for a lecturer', () => {
     await render(<TeachingClassDetails scheduleId={4} />);
     expect(screen.getByText('46% Below 75%')).toBeTruthy();
     expect(screen.getByText('92% On track')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('link', { name: 'Ada Kim S1234570' }));
+    expect(mockPush).toHaveBeenCalledWith('/student/S1234570?schedule=4');
+  });
+});
+
+describe('Class details for a lecturer on a wide screen', () => {
+  it('has no tabs: the students as a table, and the upcoming and previous sessions beside it', async () => {
+    mockWide = true;
+    mockSchedules = [schedule()];
+    mockStudents = [
+      { student_id: 'S1234570', first_name: 'Ada', last_name: 'Kim', attendance_pct: 46, present: 5, late: 1, absent: 7 },
+      { student_id: 'S1234567', first_name: 'Dan', last_name: 'Tay', attendance_pct: 92, present: 11, late: 1, absent: 1 },
+    ];
+    mockSessionsByKey = {
+      'schedule-teach': [
+        session({ session_id: 1, session_date: '2026-10-27', ends_at: '2026-10-27T12:00:00', status: 'finished' }),
+        session({ session_id: 2, session_date: '2026-11-10', ends_at: '2026-11-10T12:00:00', status: 'scheduled' }),
+      ],
+    };
+    mockCounts = new Map([[1, { session_id: 1, enrolled: 24, present: 20, late: 1 }]]);
+    await render(<TeachingClassDetails scheduleId={4} />);
+
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getByText('Enrolled students (2)')).toBeTruthy();
+    expect(screen.getByText('46%')).toBeTruthy();
+    expect(screen.getByText('Below 75%')).toBeTruthy();
+    expect(screen.getByText('92%')).toBeTruthy();
+    expect(screen.getByText('On track')).toBeTruthy();
+    expect(screen.getAllByText('View')).toHaveLength(2);
+    expect(screen.getAllByText('Upcoming')).toHaveLength(2); // the card title and the session's pill
+    expect(screen.getByText('Previous')).toBeTruthy();
+    expect(screen.getByText('21 of 24 attended')).toBeTruthy();
+    expect(screen.getByText('88%')).toBeTruthy();
     await fireEvent.press(screen.getByRole('link', { name: 'Ada Kim S1234570' }));
     expect(mockPush).toHaveBeenCalledWith('/student/S1234570?schedule=4');
   });

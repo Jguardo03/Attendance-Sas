@@ -445,6 +445,12 @@ No animation that blocks check in; no information conveyed by colour alone.
 
 Student and lecturer Home now follow the reference images: no separate header; one `HomeBanner` (`src/features/sessions/components/home-banner.tsx`) with the date, the greeting and the live session plus its button, or, with none live, the next session today (no button), or "No sessions today. Your next one is ...". On 1280 px and wider the banner and "Today's sessions" take two thirds and the attendance and Coming up cards sit beside them; narrower, everything stacks with the banner first. Today's cards are a wrapping row (`CardRow`, at least 240 px each). The lecturer banner no longer has the progress ring; the "N of M checked in" line stays.
 
+### Classes, Calendar and class details corrections (2026-11-04, after Phase 9)
+
+- **Classes:** from 768 px the card is the full one (artwork on top, name and ring, clock and pin rows, lecturer and status pill, `ClassTile`); the phone keeps the compact row. The Active period | Previous tabs are small, with the period name and class count on the same line at the right (`ClassesToolbar`).
+- **Calendar:** one row per session, no artwork (`SessionRow`): times, bar (solid blue when live), class, room, status, and the figure at the right (a student's own attendance, a lecturer's count or percentage).
+- **Class details:** from 1024 px there are no Upcoming | Previous tabs: everything is on the page, and from 1280 px it is in two columns. Lecturer: the enrolled students as a table (avatar, name, ID, bar and percentage, status, View) with Upcoming and Previous beside it. Student: the class, attendance and lecturer on the left, Upcoming sessions and a Previous sessions table (date, checked in, method, status) on the right. Upcoming lists the next five.
+
 ---
 
 ## Phase 9: Final verification

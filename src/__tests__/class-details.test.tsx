@@ -6,6 +6,8 @@ import { ClassDetails } from '@/features/sessions/class-details';
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
 }));
+let mockWide = false;
+jest.mock('@/features/shell/nav', () => ({ ...jest.requireActual('@/features/shell/nav'), useIsWide: () => mockWide, useIsExtraWide: () => mockWide }));
 jest.mock('@/providers/auth', () => ({
   useAuth: () => ({ claims: { appUserId: 'S1000001' }, can: () => true }),
 }));
@@ -88,6 +90,24 @@ describe('ClassDetails', () => {
     expect(screen.getByText('2 present · 0 late · 2 absent')).toBeTruthy();
     expect(await screen.findByText('Wed 4 Nov · 13:00 to 15:00')).toBeTruthy();
     expect(screen.queryByText('Wed 28 Oct · 13:00 to 15:00')).toBeNull();
+    client.clear();
+  });
+
+  it('on a wide screen shows the upcoming and previous sessions without tabs', async () => {
+    mockWide = true;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await render(
+      <QueryClientProvider client={client}>
+        <ClassDetails scheduleId={3} />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('Upcoming sessions')).toBeTruthy();
+    expect(screen.getByText('Previous sessions')).toBeTruthy();
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getByText('My status')).toBeTruthy();
+    expect(screen.getByText('Wed 28 Oct')).toBeTruthy();
+    expect(screen.getByText('Relational modelling.')).toBeTruthy();
+    mockWide = false;
     client.clear();
   });
 });
