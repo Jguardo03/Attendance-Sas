@@ -357,6 +357,30 @@ describe('Session details for a student', () => {
     expect(screen.getByText('Something wrong? Ask your lecturer to correct it.')).toBeTruthy();
   });
 
+  it('shows only the attendance once the session is over, with no Check in card', async () => {
+    mockSession = session({ status: 'finished', now_local: '2026-11-03T13:00:00' });
+    mockAttendance = new Map([[38, { session_id: 38, status: 'present', checked_in_at: '2026-11-03T00:01:00+00:00', check_in_method: 'beacon' }]]);
+    await render(<SessionDetails sessionId={38} />);
+    expect(screen.getByText('Present')).toBeTruthy();
+    expect(screen.getByText('On time')).toBeTruthy();
+    expect(screen.getByText('Beacon')).toBeTruthy();
+    expect(screen.queryByText('Check in')).toBeNull();
+    expect(screen.queryByText("You're checked in")).toBeNull();
+    expect(screen.queryByRole('button', { name: /check in/i })).toBeNull();
+  });
+
+  it('on a wide screen keeps the check in banner and adds the session details beside the lecturer and attendees', async () => {
+    mockWide = true;
+    await render(<SessionDetails sessionId={38} />);
+    expect(screen.getByText("You haven't checked in yet")).toBeTruthy();
+    expect(screen.getByText('Session details')).toBeTruthy();
+    expect(screen.getByText('Location')).toBeTruthy();
+    expect(screen.getByText('Omar Park')).toBeTruthy();
+    expect(screen.getByText('Session attendees (0)')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Check in' }));
+    expect(mockPush).toHaveBeenCalledWith('/check-in/38');
+  });
+
   it('says a cancelled session does not count', async () => {
     mockSession = session({ status: 'cancelled' });
     await render(<SessionDetails sessionId={38} />);

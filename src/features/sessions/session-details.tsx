@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, Loading } from '@/components/ui';
 import { markCheckInStart } from '@/features/check-in/timing';
+import { useIsWide } from '@/features/shell/nav';
 import { TeachingSessionPanel } from '@/features/teaching/teaching-session-panel';
 import { useAuth } from '@/providers/auth';
 
@@ -13,7 +14,6 @@ import { audienceOf } from './audience';
 
 import {
   attendanceLabel,
-  attendancePill,
   checkInState,
   checkedInAt,
   formatDayLong,
@@ -28,6 +28,8 @@ import { useAttendanceRealtime } from './realtime';
 
 const PREVIEW = 5;
 
+const banner = require('../../../assets/images/Artboard Banner.png');
+
 function MetaRow({ icon, text }: { icon: 'calendar' | 'clock' | 'pin'; text: string }) {
   return (
     <View className="flex-row items-center gap-2">
@@ -37,11 +39,24 @@ function MetaRow({ icon, text }: { icon: 'calendar' | 'clock' | 'pin'; text: str
   );
 }
 
+function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View className="flex-row items-center justify-between gap-3 border-t border-border pt-2">
+      <Text variant="meta">{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+const resultIcon = { Present: { name: 'checkCircle', color: 'success', tint: 'bg-success-tint' }, Late: { name: 'clock', color: 'warning', tint: 'bg-warning-tint' } } as const;
+
 // Session details (Student UI pages 25 to 32). A student also sees the Check in card (live while check in is open,
-// otherwise the reason it is not) and their own attendance. A lecturer or admin can show the room QR code while check
-// in is open and sees the whole class's attendance.
+// otherwise the reason it is not; none once the session is over) and their own attendance. A lecturer or admin can show
+// the room QR code while check in is open and sees the whole class's attendance. From 1024 px a student's page has two
+// columns: check in or attendance and the session details on the left, the lecturer and the attendees on the right.
 export function SessionDetails({ sessionId }: { sessionId: number }) {
   const router = useRouter();
+  const wide = useIsWide();
   const { can, claims } = useAuth();
   const [showAll, setShowAll] = useState(false);
   const session = useSession(sessionId);
@@ -71,94 +86,168 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
   const lecturer = lecturerName(data);
   const showResult = isStudent && data.status !== 'cancelled' && (data.status === 'finished' || state.kind === 'checked_in');
 
-  return (
-    <Screen standalone title={data.class_name} header={<ScreenHeader title={data.class_name} subtitle={data.period_name} status={{ label: pill.label, tone: pill.tone, dot: pill.dot }} onBack={goBack} />}>
-      <Card>
-        <MetaRow icon="calendar" text={formatDayLong(data.session_date)} />
-        <MetaRow icon="clock" text={timeRange(data)} />
-        {data.location_name ? <MetaRow icon="pin" text={data.location_name} /> : null}
-      </Card>
+  const twoColumns = wide && isStudent;
 
-      {isStudent ? (
-        <>
-          {data.status === 'cancelled' ? (
-            <Banner tone="warning" title="This session was cancelled" message="It won't count towards your attendance." />
-          ) : state.kind === 'open' ? (
-            <Card variant="hero">
-              <Text className="font-inter-bold text-section text-primary-content">You haven&apos;t checked in yet</Text>
-              <Text className="text-primary-content">{state.help}</Text>
-              <Button
-                variant="secondary"
-                size="large"
-                icon="check"
-                label={state.label}
-                onPress={() => {
-                  markCheckInStart();
-                  router.push(`/check-in/${sessionId}`);
-                }}
-              />
-            </Card>
-          ) : state.kind === 'checked_in' ? (
-            <Banner tone="success" title="You're checked in" message={state.help} />
-          ) : (
-            <Card title="Check in">
-              <Text variant="meta">{state.help}</Text>
-              <Button label={state.label} disabled />
-            </Card>
-          )}
+  const metaCard = (
+    <Card>
+      <MetaRow icon="calendar" text={formatDayLong(data.session_date)} />
+      <MetaRow icon="clock" text={timeRange(data)} />
+      {data.location_name ? <MetaRow icon="pin" text={data.location_name} /> : null}
+    </Card>
+  );
 
-          {showResult ? (
-            <Card title="My attendance">
-              <View className="flex-row items-center justify-between">
-                <Text variant="meta">Status</Text>
-                <Badge label={word} {...attendancePill(word)} />
-              </View>
-              <View className="flex-row items-center justify-between">
-                <Text variant="meta">Checked in at</Text>
-                <Text>{checkedInAt(attendance)}</Text>
-              </View>
-              <View className="flex-row items-center justify-between">
-                <Text variant="meta">Method</Text>
-                <Text>{methodLabel(attendance?.check_in_method ?? null)}</Text>
-              </View>
-              {data.status === 'finished' ? <Text variant="meta">Something wrong? Ask your lecturer to correct it.</Text> : null}
-            </Card>
-          ) : null}
-        </>
+  const detailsCard = (
+    <Card title="Session details">
+      <DetailRow label="Class">
+        <Text className="font-inter-semibold">{data.class_name}</Text>
+      </DetailRow>
+      <DetailRow label="Date">
+        <Text className="font-inter-semibold">{formatDayLong(data.session_date)}</Text>
+      </DetailRow>
+      <DetailRow label="Time">
+        <Text className="font-inter-semibold">{timeRange(data)}</Text>
+      </DetailRow>
+      {data.location_name ? (
+        <DetailRow label="Location">
+          <Text className="font-inter-semibold">{data.location_name}</Text>
+        </DetailRow>
       ) : null}
+      <DetailRow label="Status">
+        <Badge label={pill.label} tone={pill.tone} dot={pill.dot} />
+      </DetailRow>
+    </Card>
+  );
 
-      <Card>
-        <View className="flex-row items-center gap-3">
-          <Avatar name={lecturer} id={data.lecturer_id} size={44} />
-          <View className="flex-1">
-            <Text variant="meta">Lecturer</Text>
-            <Text variant="card">{lecturer}</Text>
-            {data.lecturer_email ? <Text variant="meta">{data.lecturer_email}</Text> : null}
+  // Check in: the blue banner while it is open, the reason when it is not. Nothing once the session is over.
+  const checkInCard =
+    data.status === 'cancelled' ? (
+      <Banner tone="warning" title="This session was cancelled" message="It won't count towards your attendance." />
+    ) : data.status === 'finished' ? null : state.kind === 'open' ? (
+      <Card variant="hero" image={banner}>
+        <View className="flex-row flex-wrap items-center gap-3">
+          <View className="min-w-48 flex-1 gap-1">
+            <Text className="font-inter-bold text-section text-primary-content">You haven&apos;t checked in yet</Text>
+            <Text className="text-primary-content">{state.help}</Text>
+          </View>
+          <View className="w-full md:w-auto md:min-w-44">
+            <Button
+              variant="secondary"
+              size="large"
+              icon="check"
+              label={state.label}
+              onPress={() => {
+                markCheckInStart();
+                router.push(`/check-in/${sessionId}`);
+              }}
+            />
           </View>
         </View>
       </Card>
+    ) : state.kind === 'checked_in' ? (
+      <Banner tone="success" title="You're checked in" message={state.help} />
+    ) : (
+      <Card title="Check in">
+        <Text variant="meta">{state.help}</Text>
+        <Button label={state.label} disabled />
+      </Card>
+    );
 
-      {isStudent ? (
-        <Card title={`Session attendees (${people.length})`}>
-          {attendees.isPending ? <Loading /> : null}
-          {people.length > 0 ? (
-            <View className="flex-row flex-wrap items-center gap-1">
-              {people.slice(0, PREVIEW).map((person, index) => (
-                <Avatar key={`${person.last_name}-${person.first_name}-${index}`} name={`${person.first_name} ${person.last_name}`} size={32} />
-              ))}
-              {people.length > PREVIEW ? <Text variant="meta">+{people.length - PREVIEW} more</Text> : null}
-            </View>
-          ) : null}
-          {visible.map((person, index) => (
-            <View key={`${person.last_name}-${person.first_name}-${index}`} className="flex-row items-center gap-2">
-              <Avatar name={`${person.first_name} ${person.last_name}`} size={28} />
-              <Text>
-                {person.first_name} {person.last_name}
-              </Text>
-            </View>
+  const result = word === 'Present' || word === 'Late' ? resultIcon[word] : ({ name: 'close', color: 'danger', tint: 'bg-danger-tint' } as const);
+  const attendanceCard = showResult ? (
+    <Card>
+      <View className="flex-row items-center gap-3">
+        <View className={`h-12 w-12 items-center justify-center rounded-block ${result.tint}`}>
+          <Icon name={result.name} size={24} color={result.color} />
+        </View>
+        <View className="flex-1">
+          <Text variant="meta">My attendance</Text>
+          <Text className="font-inter-bold text-section">{word}</Text>
+        </View>
+        {word === 'Present' ? <Badge label="On time" tone="success" dot /> : null}
+      </View>
+      <DetailRow label="Checked in at">
+        <Text className="font-inter-semibold">{checkedInAt(attendance)}</Text>
+      </DetailRow>
+      <DetailRow label="Method">
+        <Text className="font-inter-semibold">{methodLabel(attendance?.check_in_method ?? null)}</Text>
+      </DetailRow>
+      {data.status === 'finished' ? (
+        <View className="rounded-block bg-surface-muted p-3">
+          <Text variant="meta">Something wrong? Ask your lecturer to correct it.</Text>
+        </View>
+      ) : null}
+    </Card>
+  ) : null;
+
+  const lecturerCard = (
+    <Card>
+      <View className="flex-row items-center gap-3">
+        <Avatar name={lecturer} id={data.lecturer_id} size={44} />
+        <View className="flex-1">
+          <Text variant="meta">Lecturer</Text>
+          <Text variant="card">{lecturer}</Text>
+          {data.lecturer_email ? <Text variant="meta">{data.lecturer_email}</Text> : null}
+        </View>
+      </View>
+    </Card>
+  );
+
+  const attendeesCard = (
+    <Card title={`Session attendees (${people.length})`}>
+      {attendees.isPending ? <Loading /> : null}
+      {people.length > 0 ? (
+        <View className="flex-row flex-wrap items-center gap-1">
+          {people.slice(0, PREVIEW).map((person, index) => (
+            <Avatar key={`${person.last_name}-${person.first_name}-${index}`} name={`${person.first_name} ${person.last_name}`} size={32} />
           ))}
-          {people.length > PREVIEW ? <Button variant="secondary" label={showAll ? 'Show fewer' : 'Show all'} onPress={() => setShowAll((value) => !value)} /> : null}
-        </Card>
+          {people.length > PREVIEW ? <Text variant="meta">+{people.length - PREVIEW} more</Text> : null}
+        </View>
+      ) : null}
+      {visible.map((person, index) => (
+        <View key={`${person.last_name}-${person.first_name}-${index}`} className="flex-row items-center gap-2">
+          <Avatar name={`${person.first_name} ${person.last_name}`} size={28} />
+          <Text>
+            {person.first_name} {person.last_name}
+          </Text>
+        </View>
+      ))}
+      {people.length > PREVIEW ? <Button variant="secondary" label={showAll ? 'Show fewer' : 'Show all'} onPress={() => setShowAll((value) => !value)} /> : null}
+    </Card>
+  );
+
+  const header = <ScreenHeader title={data.class_name} subtitle={data.period_name} status={{ label: pill.label, tone: pill.tone, dot: pill.dot }} onBack={goBack} />;
+
+  if (twoColumns) {
+    return (
+      <Screen standalone title={data.class_name} header={header}>
+        <View className="flex-row items-start gap-4">
+          <View className="flex-[2] gap-4">
+            {checkInCard}
+            {attendanceCard}
+            {detailsCard}
+          </View>
+          <View className="flex-1 gap-4">
+            {lecturerCard}
+            {attendeesCard}
+          </View>
+        </View>
+        {data.status === 'rescheduled' ? <Text variant="meta">Moved to {hhmm(data.start_time)}.</Text> : null}
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen standalone title={data.class_name} header={header}>
+      {metaCard}
+      {isStudent ? (
+        <>
+          {checkInCard}
+          {attendanceCard}
+        </>
+      ) : null}
+      {lecturerCard}
+      {isStudent ? (
+        attendeesCard
       ) : (
         <>
           {showRoomQr ? (
