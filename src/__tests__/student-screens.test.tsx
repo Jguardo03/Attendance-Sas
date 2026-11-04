@@ -29,7 +29,7 @@ jest.mock('@/providers/auth', () => ({
   useAuth: () => ({ claims: { appUserId: 'S1000002', role: mockRole }, can: (key: string) => mockCan(key), signOut: jest.fn() }),
 }));
 jest.mock('@/features/check-in/timing', () => ({ markCheckInStart: () => mockMarkStart() }));
-jest.mock('@/features/shell/nav', () => ({ ...jest.requireActual('@/features/shell/nav'), useIsWide: () => mockWide, useIsExtraWide: () => mockWide }));
+jest.mock('@/features/shell/nav', () => ({ ...jest.requireActual('@/features/shell/nav'), useIsWide: () => mockWide, useIsExtraWide: () => mockWide, useIsMedium: () => mockWide }));
 jest.mock('@/features/shell/use-my-profile', () => ({ useMyProfile: () => ({ data: mockProfile, isPending: false, isError: false }) }));
 jest.mock('@/features/sessions/realtime', () => ({ useAttendanceRealtime: jest.fn() }));
 jest.mock('@/features/sessions/queries', () => ({
@@ -246,6 +246,21 @@ describe('Student Classes', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'See previous periods' }));
     expect(screen.getByText('Old class')).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Previous' })).toBeSelected();
+  });
+
+  it('on a wide screen shows the full card with a status pill, and the period and count beside the small tabs', async () => {
+    mockWide = true;
+    mockSchedules = [schedule(), schedule({ schedule_id: 5, class_id: 7, class_name: 'Databases' })];
+    mockOverview = new Map<number, unknown>([[4, numbers({ attendance_pct: 92 })], [5, numbers({ schedule_id: 5, attendance_pct: 64 })]]);
+    await render(<StudentClasses />);
+    expect(screen.getByText('2026 Term 4 · 2 classes')).toBeTruthy();
+    expect(screen.queryByText('2026 Term 4 (active)')).toBeNull();
+    expect(screen.getByText('On track')).toBeTruthy();
+    expect(screen.getByText('Below 75%')).toBeTruthy();
+    expect(screen.getAllByText('Tue · 10:00 to 12:00')).toHaveLength(2);
+    expect(screen.getAllByText('Room 1.02')).toHaveLength(2);
+    await fireEvent.press(screen.getAllByRole('link', { name: 'Web Development' })[0]);
+    expect(mockPush).toHaveBeenCalledWith('/class/4');
   });
 
   it('opens a class', async () => {

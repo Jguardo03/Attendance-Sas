@@ -5,9 +5,12 @@ import { Pressable, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { ClassArtwork } from '@/components/class-artwork';
 import { ProgressRing } from '@/components/charts';
-import { EmptyState, Grid, Screen, SegmentedTabs, Text, Card, Loading } from '@/components/ui';
+import { Badge, EmptyState, Grid, Screen, Text, Card, Loading } from '@/components/ui';
+import { ClassTile } from '@/features/sessions/components/class-tile';
+import { ClassesToolbar, classCount } from '@/features/sessions/components/classes-toolbar';
 import { slotLabel } from '@/features/sessions/format';
 import { useSchedules, useStudentOverview, type AttendanceNumbers, type ScheduleOverview } from '@/features/sessions/queries';
+import { useIsExtraWide, useIsMedium } from '@/features/shell/nav';
 import { RING_THRESHOLD } from '@/lib/ring';
 import { useAuth } from '@/providers/auth';
 import { shadows } from '@/theme/tokens';
@@ -19,6 +22,35 @@ function ClassCard({ schedule, numbers, previous }: { schedule: ScheduleOverview
   const router = useRouter();
   const percent = percentOf(numbers);
   const lecturer = `${schedule.lecturer_first_name ?? ''} ${schedule.lecturer_last_name ?? ''}`.trim();
+  const medium = useIsMedium();
+
+  if (medium) {
+    return (
+      <ClassTile
+        classId={schedule.class_id}
+        name={schedule.class_name}
+        onPress={() => router.push(`/class/${schedule.schedule_id}`)}
+        ring={<ProgressRing value={percent} size={44} label={previous ? 'Attendance' : 'My attendance'} />}
+        lines={
+          previous
+            ? [{ icon: 'calendar', text: schedule.period_name }]
+            : [
+                { icon: 'clock', text: slotLabel(schedule.week_day, schedule.start_time, schedule.end_time) },
+                ...(schedule.location_name ? [{ icon: 'pin' as const, text: schedule.location_name }] : []),
+              ]
+        }
+        lecturer={lecturer}
+        lecturerId={schedule.lecturer_id}
+        pill={
+          percent === null ? (
+            <Badge label="No sessions yet" tone="neutral" />
+          ) : (
+            <Badge label={percent < RING_THRESHOLD ? `Below ${RING_THRESHOLD}%` : 'On track'} tone={percent < RING_THRESHOLD ? 'danger' : 'success'} />
+          )
+        }
+      />
+    );
+  }
 
   return (
     <Pressable
@@ -56,6 +88,8 @@ export function StudentClasses() {
   const [tab, setTab] = useState<'current' | 'previous'>('current');
   const schedules = useSchedules();
   const numbers = useStudentOverview(claims?.appUserId);
+  const medium = useIsMedium();
+  const columns = useIsExtraWide() ? 3 : medium ? 2 : 1;
 
   const current = (schedules.data ?? []).filter((schedule) => schedule.period_status !== 'finished');
   const previous = (schedules.data ?? []).filter((schedule) => schedule.period_status === 'finished');
@@ -66,14 +100,14 @@ export function StudentClasses() {
 
   return (
     <Screen title="Classes">
-      <SegmentedTabs
-        label="Show"
+      <ClassesToolbar
         value={tab}
         options={[
           { value: 'current', label: 'Active period' },
           { value: 'previous', label: 'Previous' },
         ]}
         onChange={(value) => setTab(value as 'current' | 'previous')}
+        summary={shown.length === 0 ? undefined : tab === 'current' && groups.length === 1 ? `${shown[0].period_name} · ${classCount(shown.length)}` : classCount(shown.length)}
       />
       {schedules.isPending ? <Loading /> : null}
       {schedules.isError ? <Text variant="error">Could not load your classes.</Text> : null}
@@ -96,8 +130,8 @@ export function StudentClasses() {
         const [period, status] = group.split('|');
         return (
           <View key={group} className="gap-3">
-            {tab === 'current' ? <Text variant="section">{`${period} (${status})`}</Text> : null}
-            <Grid>
+            {tab === 'current' && (!medium || groups.length > 1) ? <Text variant="section">{`${period} (${status})`}</Text> : null}
+            <Grid columns={columns}>
               {shown
                 .filter((schedule) => `${schedule.period_name}|${schedule.period_status}` === group)
                 .map((schedule) => (

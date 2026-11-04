@@ -5,6 +5,11 @@ import type { IconName } from '@/components/icon';
 // What the app's navigation offers and who sees it. Pure, so it can be tested without drawing anything.
 // Phones get a bottom tab bar; wide screens (a desktop browser, a tablet on its side) get a left sidebar instead.
 
+/** From this width (a tablet or larger) cards switch from the compact phone row to the full card with its artwork on top. */
+export const MEDIUM_BREAKPOINT = 768;
+
+export const useIsMedium = () => useWindowDimensions().width >= MEDIUM_BREAKPOINT;
+
 /** From this width the sidebar replaces the bottom bar (the desktop mockups are drawn at 1024 and up). */
 export const WIDE_BREAKPOINT = 1024;
 

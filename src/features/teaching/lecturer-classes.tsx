@@ -4,9 +4,12 @@ import { Pressable, View } from 'react-native';
 
 import { ClassArtwork } from '@/components/class-artwork';
 import { ProgressRing } from '@/components/charts';
-import { Card, EmptyState, Grid, Screen, SegmentedTabs, Text, Loading } from '@/components/ui';
+import { Badge, Card, EmptyState, Grid, Screen, Text, Loading } from '@/components/ui';
+import { ClassTile } from '@/features/sessions/components/class-tile';
+import { ClassesToolbar, classCount } from '@/features/sessions/components/classes-toolbar';
 import { slotLabel } from '@/features/sessions/format';
 import { useClassSummaries, useSchedules, useSessionTotals, type ClassSummary, type ScheduleOverview } from '@/features/sessions/queries';
+import { useIsExtraWide, useIsMedium } from '@/features/shell/nav';
 import { shadows } from '@/theme/tokens';
 
 function belowText(count: number) {
@@ -27,6 +30,28 @@ function ClassCard({
   const router = useRouter();
   const average = summary && summary.class_average_pct !== null ? Number(summary.class_average_pct) : null;
   const below = Number(summary?.students_below_75 ?? 0);
+  const medium = useIsMedium();
+
+  if (medium) {
+    return (
+      <ClassTile
+        classId={schedule.class_id}
+        name={schedule.class_name}
+        onPress={() => router.push(`/class/${schedule.schedule_id}`)}
+        ring={<ProgressRing value={average} size={44} label="Class average" />}
+        lines={
+          previous
+            ? [{ icon: 'calendar', text: schedule.period_name }]
+            : [
+                { icon: 'clock', text: slotLabel(schedule.week_day, schedule.start_time, schedule.end_time) },
+                ...(schedule.location_name ? [{ icon: 'pin' as const, text: schedule.location_name }] : []),
+              ]
+        }
+        note={summary ? `${summary.enrolled} enrolled${totals && !previous ? ` · ${totals.held} of ${totals.total} held` : ''}` : undefined}
+        pill={summary ? <Badge label={below > 0 ? `${below} below 75%` : 'On track'} tone={below > 0 ? 'danger' : 'success'} /> : undefined}
+      />
+    );
+  }
 
   return (
     <Pressable
@@ -78,20 +103,22 @@ export function LecturerClasses() {
   const ids = (schedules.data ?? []).map((schedule) => schedule.schedule_id);
   const summaries = useClassSummaries(ids);
   const totals = useSessionTotals(ids);
+  const medium = useIsMedium();
+  const columns = useIsExtraWide() ? 3 : medium ? 2 : 1;
 
   const shown = (schedules.data ?? []).filter((schedule) => (tab === 'current' ? schedule.period_status !== 'finished' : schedule.period_status === 'finished'));
   const groups = [...new Set(shown.map((schedule) => `${schedule.period_name}|${schedule.period_status}`))];
 
   return (
     <Screen title="Classes">
-      <SegmentedTabs
-        label="Show"
+      <ClassesToolbar
         value={tab}
         options={[
           { value: 'current', label: 'Active period' },
           { value: 'previous', label: 'Previous periods' },
         ]}
         onChange={(value) => setTab(value as 'current' | 'previous')}
+        summary={shown.length === 0 ? undefined : tab === 'current' && groups.length === 1 ? `${shown[0].period_name} · ${classCount(shown.length)}` : classCount(shown.length)}
       />
       {schedules.isPending ? <Loading /> : null}
       {schedules.isError ? <Text variant="error">Could not load your classes.</Text> : null}
@@ -110,14 +137,16 @@ export function LecturerClasses() {
         const students = inGroup.reduce((sum, schedule) => sum + Number(summaries.data?.get(schedule.schedule_id)?.enrolled ?? 0), 0);
         return (
           <View key={group} className="gap-3">
-            <View className="gap-0.5">
-              {tab === 'current' ? <Text variant="section">{`${period} (${status})`}</Text> : null}
-              <Text variant="meta">
-                {inGroup.length} class{inGroup.length === 1 ? '' : 'es'}
-                {summaries.data ? ` · ${students} students` : ''}
-              </Text>
-            </View>
-            <Grid>
+            {!medium || groups.length > 1 ? (
+              <View className="gap-0.5">
+                {tab === 'current' ? <Text variant="section">{`${period} (${status})`}</Text> : null}
+                <Text variant="meta">
+                  {inGroup.length} class{inGroup.length === 1 ? '' : 'es'}
+                  {summaries.data ? ` · ${students} students` : ''}
+                </Text>
+              </View>
+            ) : null}
+            <Grid columns={columns}>
               {inGroup.map((schedule) => (
                 <ClassCard
                   key={schedule.schedule_id}
