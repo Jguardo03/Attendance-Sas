@@ -67,23 +67,12 @@ describe('opening a record', () => {
     { student_id: 'S1000002', first_name: 'Alan', last_name: 'Turing', status: 'present', checked_in_at: '2026-11-02T02:01:00+00:00', check_in_method: 'qr' },
   ];
 
-  it('opens a student record, and offers manual check in only to someone who has not checked in', async () => {
+  it('opens the record of the student whose card is pressed', async () => {
     mockUseAttendanceList.mockReturnValue({ data: rows, isPending: false, refetch: mockRefetch });
     await render(<TeachingSessionPanel session={session} />);
-    expect(screen.getAllByText('View record')).toHaveLength(2);
-    expect(screen.getAllByText('Check in manually')).toHaveLength(1);
-
-    await fireEvent.press(screen.getByText('Check in manually'));
-    expect(mockPush).toHaveBeenCalledWith('/attendance/7/S1000001?edit=1');
-    await fireEvent.press(screen.getAllByText('View record')[1]);
+    await fireEvent.press(screen.getByText('Ada Lovelace'));
+    expect(mockPush).toHaveBeenCalledWith('/attendance/7/S1000001');
+    await fireEvent.press(screen.getByText('Alan Turing'));
     expect(mockPush).toHaveBeenLastCalledWith('/attendance/7/S1000002');
-  });
-
-  it('does not offer manual check in to a lecturer who does not teach the session', async () => {
-    mockUseAttendanceList.mockReturnValue({ data: rows, isPending: false, refetch: mockRefetch });
-    mockCan = (key) => key === 'attendance.edit';
-    await render(<TeachingSessionPanel session={{ ...session, lecturer_id: 'L1000009' } as Session} />);
-    expect(screen.queryByText('Check in manually')).toBeNull();
-    expect(screen.getAllByText('View record')).toHaveLength(2);
   });
 });

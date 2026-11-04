@@ -18,10 +18,12 @@ import { queryClient } from '@/lib/query-client';
 const mockRpc = jest.fn();
 let mockCan: (key: string) => boolean = () => true;
 let mockQueryData: Record<string, unknown> = {};
+let mockWide = false;
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
 }));
+jest.mock('@/features/shell/nav', () => ({ ...jest.requireActual('@/features/shell/nav'), useIsWide: () => mockWide }));
 jest.mock('@/providers/auth', () => ({
   useAuth: () => ({ claims: { appUserId: 'L1000002' }, can: (key: string) => mockCan(key) }),
 }));
@@ -30,6 +32,7 @@ jest.mock('@/features/sessions/queries', () => ({
   useSession: () => ({ isPending: false, data: mockQueryData.session }),
   useAttendanceRecord: () => ({ isPending: false, data: mockQueryData.record }),
   useStudentInfo: () => ({ isPending: false, data: mockQueryData.student }),
+  useStudentClassNumbers: () => ({ isPending: false, data: mockQueryData.numbers }),
   useAttendanceHistory: () => ({ isPending: false, data: mockQueryData.history }),
 }));
 
@@ -53,6 +56,7 @@ const absentRecord = { student_id: 'S1234570', session_id: 7, status: 'absent', 
 
 beforeEach(() => {
   mockRpc.mockReset();
+  mockWide = false;
   mockCan = () => true;
   mockQueryData = {
     session,
@@ -162,6 +166,20 @@ describe('attendance record screen', () => {
     expect(screen.getByText(/Last changed by System, 23\/10\/2026 08:30/)).toBeTruthy();
     expect(screen.getByText('Change attendance')).toBeTruthy();
     expect(screen.getByText("View student's attendance")).toBeTruthy();
+  });
+
+  it('puts the change and the student in this class in a third column on a wide screen', async () => {
+    mockWide = true;
+    mockQueryData.numbers = { finished_sessions: 13, present: 5, late: 1, absent: 7, attendance_pct: 46 };
+    await renderRecord();
+    expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+    expect(screen.getByText('Absent')).toBeTruthy();
+    expect(screen.getByText('Need to correct this?')).toBeTruthy();
+    expect(screen.getByText('Student in this class')).toBeTruthy();
+    expect(screen.getByText('6 of 13 attended')).toBeTruthy();
+    expect(screen.getByText('Below 75%')).toBeTruthy();
+    expect(screen.getByText("View student's attendance")).toBeTruthy();
+    expect(screen.getByText('History')).toBeTruthy();
   });
 
   it('picks the status with the three tiles, one at a time', async () => {

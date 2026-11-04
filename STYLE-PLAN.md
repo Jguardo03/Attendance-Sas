@@ -451,6 +451,12 @@ Student and lecturer Home now follow the reference images: no separate header; o
 - **Calendar:** one row per session, no artwork (`SessionRow`): times, bar (solid blue when live), class, room, status, and the figure at the right (a student's own attendance, a lecturer's count or percentage).
 - **Class details:** from 1024 px there are no Upcoming | Previous tabs: everything is on the page, and from 1280 px it is in two columns. Lecturer: the enrolled students as a table (avatar, name, ID, bar and percentage, status, View) with Upcoming and Previous beside it. Student: the class, attendance and lecturer on the left, Upcoming sessions and a Previous sessions table (date, checked in, method, status) on the right. Upcoming lists the next five.
 
+### Lecturer session and attendance record corrections (2026-11-04, after Phase 9)
+
+- **Session (lecturer and admin):** no lecturer card (an admin sees whose session it is as a chip); the date, time and room are small chips. From 1024 px four cards: attendance % and "N of M checked in" on the banner artwork, Present on time, Present late, and Not checked in yet (Absent once finished). On a phone one banner holds the figures (Attendance, Checked in, Late; Attended, Present, Late, Absent when finished). Before the session starts there is no blue card, only "Check in opens at HH:MM".
+- **Attendees:** the title has no count; search and the status filter sit on the title's row and have no labels. Desktop is a table, one line per student: avatar and name, ID, status, checked in at, method, View (before the session only student, ID and status). On a phone each student is one tappable card (avatar, name, ID and time, status). The inline "View record" and "Check in manually" buttons are gone: the record has Check in manually.
+- **Attendance record:** from 1024 px three columns: the student and the record take two (History under them), the third has "Need to correct this?" and "Student in this class" (ring, N of M attended, View student's attendance). The phone layout is unchanged.
+
 ---
 
 ## Phase 9: Final verification

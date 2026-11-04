@@ -7,14 +7,17 @@ import { Text } from './text';
 
 export function TextField({
   label,
+  hideLabel = false,
   error,
   ...props
-}: TextInputProps & { label: string; error?: string }) {
+}: TextInputProps & { label: string; /** Keep the label for screen readers only (a search box beside its heading). */ hideLabel?: boolean; error?: string }) {
   return (
     <View className="gap-1">
-      <Text variant="meta" className="font-inter-medium">
-        {label}
-      </Text>
+      {hideLabel ? null : (
+        <Text variant="meta" className="font-inter-medium">
+          {label}
+        </Text>
+      )}
       <TextInput
         accessibilityLabel={label}
         placeholderTextColor={colors.contentMuted}

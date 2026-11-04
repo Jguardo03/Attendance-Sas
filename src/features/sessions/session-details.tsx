@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-import { Icon } from '@/components/icon';
+import { Icon, type IconName } from '@/components/icon';
 import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, Loading } from '@/components/ui';
 import { markCheckInStart } from '@/features/check-in/timing';
 import { useIsWide } from '@/features/shell/nav';
@@ -35,6 +35,15 @@ function MetaRow({ icon, text }: { icon: 'calendar' | 'clock' | 'pin'; text: str
     <View className="flex-row items-center gap-2">
       <Icon name={icon} size={18} color="contentMuted" />
       <Text className="flex-1">{text}</Text>
+    </View>
+  );
+}
+
+function Chip({ icon, text }: { icon: IconName; text: string }) {
+  return (
+    <View className="flex-row items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1.5">
+      <Icon name={icon} size={14} color="contentMuted" />
+      <Text variant="meta">{text}</Text>
     </View>
   );
 }
@@ -94,6 +103,16 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
       <MetaRow icon="clock" text={timeRange(data)} />
       {data.location_name ? <MetaRow icon="pin" text={data.location_name} /> : null}
     </Card>
+  );
+
+  // A lecturer or admin sees the session as small chips; the lecturer's own name is left out, an admin sees whose it is.
+  const chips = (
+    <View className="flex-row flex-wrap gap-2">
+      <Chip icon="calendar" text={formatDayLong(data.session_date)} />
+      <Chip icon="clock" text={timeRange(data)} />
+      {data.location_name ? <Chip icon="pin" text={data.location_name} /> : null}
+      {lecturer && claims?.appUserId !== data.lecturer_id ? <Chip icon="profile" text={lecturer} /> : null}
+    </View>
   );
 
   const detailsCard = (
@@ -238,23 +257,21 @@ export function SessionDetails({ sessionId }: { sessionId: number }) {
 
   return (
     <Screen standalone title={data.class_name} header={header}>
-      {metaCard}
       {isStudent ? (
         <>
+          {metaCard}
           {checkInCard}
           {attendanceCard}
+          {lecturerCard}
+          {attendeesCard}
         </>
-      ) : null}
-      {lecturerCard}
-      {isStudent ? (
-        attendeesCard
       ) : (
         <>
+          {chips}
           {showRoomQr ? (
-            <Card title="Room QR code">
-              <Text variant="meta">Show the code on a screen in the room so students can scan it to check in.</Text>
-              <Button label="Show room QR" icon="qr" onPress={() => router.push(`/room-qr?session=${sessionId}`)} />
-            </Card>
+            <View className="md:w-56">
+              <Button variant="secondary" label="Show room QR" icon="qr" onPress={() => router.push(`/room-qr?session=${sessionId}`)} />
+            </View>
           ) : null}
           <TeachingSessionPanel session={data} />
         </>

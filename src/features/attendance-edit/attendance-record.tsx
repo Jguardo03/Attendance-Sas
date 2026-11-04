@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { ProgressRing } from '@/components/charts';
 import { Icon, type IconName } from '@/components/icon';
 import { Badge, Banner, Button, Card, Screen, ScreenHeader, Text, TextField, TimeField, useScrollUpOn, Loading } from '@/components/ui';
 import {
@@ -21,11 +22,14 @@ import {
   useAttendanceHistory,
   useAttendanceRecord,
   useSession,
+  useStudentClassNumbers,
   useStudentInfo,
   type AttendanceHistoryRow,
   type AttendanceRecord as RecordRow,
   type StudentInfo,
 } from '@/features/sessions/queries';
+import { useIsWide } from '@/features/shell/nav';
+import { RING_THRESHOLD } from '@/lib/ring';
 import type { ColorToken } from '@/theme/tokens';
 import { useAuth } from '@/providers/auth';
 
@@ -119,10 +123,12 @@ function RecordBody({
   startEditing: boolean;
 }) {
   const router = useRouter();
+  const wide = useIsWide();
   const { can, claims } = useAuth();
   const queryClient = useQueryClient();
   const sessionId = data.session_id;
   const studentId = person.id;
+  const numbers = useStudentClassNumbers(studentId, data.schedule_id);
   const editable = canChangeAttendance(data, can, claims?.appUserId);
 
   const [mode, setMode] = useState<Mode>(startEditing && editable ? 'edit' : 'view');
@@ -254,9 +260,109 @@ function RecordBody({
     );
   }
 
+  const savedBanner = saved ? <Banner tone="success" message="The change was saved with your name." /> : null;
+  const sessionRows = (
+    <>
+      <Row label="Session" value={sessionLine} />
+      <Row label="Checked in at" value={melbourneTime(current?.checked_in_at) || '-'} />
+      <Row label="Method" value={methodLabel(current?.check_in_method ?? null)} />
+      <Row label="Comments" value={current?.comments || '-'} />
+      {lastChanged ? <Text variant="meta">{lastChanged}</Text> : null}
+    </>
+  );
+
+  const correctCard = (
+    <Card title="Need to correct this?">
+      {editable ? (
+        <>
+          <Text variant="meta">You can change records for sessions that have started or finished. Every change needs a reason and is saved with your name.</Text>
+          <Button label={!attended && data.status === 'started' ? 'Check in manually' : 'Change attendance'} onPress={startChange} />
+        </>
+      ) : (
+        <Text variant="meta">
+          {data.status === 'cancelled'
+            ? 'This session is cancelled, so its attendance cannot be changed.'
+            : data.status === 'started' || data.status === 'finished'
+              ? 'Only the lecturer of this session or an admin can change this record.'
+              : 'Attendance can be changed once the session has started.'}
+        </Text>
+      )}
+    </Card>
+  );
+
+  const viewStudent = <Button variant="secondary" label="View student's attendance" onPress={() => router.push(`/student/${person.id}?schedule=${data.schedule_id}`)} />;
+
+  const historyCard = (
+    <Card title="History">
+      {history.isPending ? <Loading /> : null}
+      {history.data && history.data.length === 0 ? <Text variant="meta">No changes recorded.</Text> : null}
+      {history.data?.map((row, index) => (
+        <View key={`${row.changed_at}-${index}`} className="gap-1 border-t border-border pt-2">
+          <Text>
+            {row.old_status ? `${statusWord(row.old_status)} → ${statusWord(row.new_status)}` : `Recorded as ${statusWord(row.new_status)}`}
+            {row.new_checked_in_at ? ` · ${melbourneTime(row.new_checked_in_at)}` : ''}
+            {row.new_check_in_method ? ` · ${methodLabel(row.new_check_in_method as RecordRow['check_in_method'])}` : ''}
+          </Text>
+          <Text variant="meta">
+            {row.changed_by_name ?? 'System'}, {melbourneDateTime(row.changed_at)}
+          </Text>
+          {row.reason ? <Text variant="meta">Reason: {row.reason}</Text> : null}
+        </View>
+      ))}
+    </Card>
+  );
+
+  // From 1024 px three columns: the student and this record take two, the right one has the change and the student's
+  // numbers in this class.
+  if (wide) {
+    const pct = numbers.data?.attendance_pct == null ? null : Math.round(Number(numbers.data.attendance_pct));
+    const done = numbers.data ? Number(numbers.data.present) + Number(numbers.data.late) : 0;
+    return (
+      <Screen standalone title="Attendance record" header={<ScreenHeader title="Attendance record" subtitle={data.class_name} onBack={goBack} />}>
+        {savedBanner}
+        <View className="flex-row items-start gap-4">
+          <View className="flex-[2] gap-4">
+            <Card>
+              <View className="flex-row items-center gap-4">
+                <Avatar name={fullName} id={person.id} size={64} />
+                <View className="flex-1 gap-0.5">
+                  <Text variant="title">{fullName}</Text>
+                  <Text variant="meta">
+                    {person.id}
+                    {person.email ? ` · ${person.email}` : ''}
+                  </Text>
+                </View>
+                <Badge label={statusWord(shownStatus)} {...attendancePill(statusWord(shownStatus))} />
+              </View>
+              {sessionRows}
+            </Card>
+            {historyCard}
+          </View>
+          <View className="flex-1 gap-4">
+            {correctCard}
+            <Card title="Student in this class">
+              {numbers.isPending ? <Loading /> : null}
+              {numbers.data && pct === null ? <Text variant="meta">No finished sessions yet.</Text> : null}
+              {numbers.data && pct !== null ? (
+                <View className="flex-row items-center gap-4">
+                  <ProgressRing value={pct} size={76} strokeWidth={8} label="Class attendance" />
+                  <View className="flex-1 gap-0.5">
+                    <Text variant="card">{`${done} of ${numbers.data.finished_sessions} attended`}</Text>
+                    <Text variant="meta">{pct < RING_THRESHOLD ? 'Below 75%' : 'On track'}</Text>
+                  </View>
+                </View>
+              ) : null}
+              {viewStudent}
+            </Card>
+          </View>
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen standalone title="Attendance record" header={<ScreenHeader title="Attendance record" subtitle={data.class_name} onBack={goBack} />}>
-      {saved ? <Banner tone="success" message="The change was saved with your name." /> : null}
+      {savedBanner}
       <Card>
         <View className="items-center gap-1">
           <Avatar name={fullName} id={person.id} size={72} />
@@ -273,50 +379,11 @@ function RecordBody({
         </View>
       </Card>
 
-      <Card>
-        <Row label="Session" value={sessionLine} />
-        <Row label="Checked in at" value={melbourneTime(current?.checked_in_at) || '-'} />
-        <Row label="Method" value={methodLabel(current?.check_in_method ?? null)} />
-        <Row label="Comments" value={current?.comments || '-'} />
-        {lastChanged ? <Text variant="meta">{lastChanged}</Text> : null}
-      </Card>
+      <Card>{sessionRows}</Card>
 
-      <Card title="Need to correct this?">
-        {editable ? (
-          <>
-            <Text variant="meta">You can change records for sessions that have started or finished. Every change needs a reason and is saved with your name.</Text>
-            <Button label={!attended && data.status === 'started' ? 'Check in manually' : 'Change attendance'} onPress={startChange} />
-          </>
-        ) : (
-          <Text variant="meta">
-            {data.status === 'cancelled'
-              ? 'This session is cancelled, so its attendance cannot be changed.'
-              : data.status === 'started' || data.status === 'finished'
-                ? 'Only the lecturer of this session or an admin can change this record.'
-                : 'Attendance can be changed once the session has started.'}
-          </Text>
-        )}
-      </Card>
-
-      <Button variant="secondary" label="View student's attendance" onPress={() => router.push(`/student/${person.id}?schedule=${data.schedule_id}`)} />
-
-      <Card title="History">
-        {history.isPending ? <Loading /> : null}
-        {history.data && history.data.length === 0 ? <Text variant="meta">No changes recorded.</Text> : null}
-        {history.data?.map((row, index) => (
-          <View key={`${row.changed_at}-${index}`} className="gap-1 border-t border-border pt-2">
-            <Text>
-              {row.old_status ? `${statusWord(row.old_status)} → ${statusWord(row.new_status)}` : `Recorded as ${statusWord(row.new_status)}`}
-              {row.new_checked_in_at ? ` · ${melbourneTime(row.new_checked_in_at)}` : ''}
-              {row.new_check_in_method ? ` · ${methodLabel(row.new_check_in_method as RecordRow['check_in_method'])}` : ''}
-            </Text>
-            <Text variant="meta">
-              {row.changed_by_name ?? 'System'}, {melbourneDateTime(row.changed_at)}
-            </Text>
-            {row.reason ? <Text variant="meta">Reason: {row.reason}</Text> : null}
-          </View>
-        ))}
-      </Card>
+      {correctCard}
+      {viewStudent}
+      {historyCard}
     </Screen>
   );
 }

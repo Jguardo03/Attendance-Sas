@@ -204,17 +204,50 @@ describe('Session panel counts', () => {
     { student_id: 'S3', first_name: 'Grace', last_name: 'Hopper', status: null, checked_in_at: null, check_in_method: null },
   ];
 
-  it('shows who is in, late and not yet while the session is live', async () => {
+  it('puts the figures in one banner on a phone, and each student in a card that opens the record', async () => {
     mockAttendees = rows;
     await render(<TeachingSessionPanel session={session()} />);
-    expect(screen.getByText('2 of 3')).toBeTruthy();
-    expect(screen.getByText('1 present · 1 late · 1 not yet')).toBeTruthy();
+    expect(screen.getByText('67%')).toBeTruthy();
+    expect(screen.getByText('2/3')).toBeTruthy();
+    expect(screen.getByText('Checked in')).toBeTruthy();
+    expect(screen.getByText('Session attendees')).toBeTruthy();
+    expect(screen.queryByText('View')).toBeNull();
+    await fireEvent.press(screen.getByText('Alan Turing'));
+    expect(mockPush).toHaveBeenCalledWith(expect.stringMatching(/^\/attendance\/\d+\/S2$/));
   });
 
-  it('says Absent instead of not yet once the session is over', async () => {
+  it('says Attended, Present, Late and Absent once the session is over', async () => {
     mockAttendees = rows;
     await render(<TeachingSessionPanel session={session({ status: 'finished', now_local: '2026-11-03T13:00:00' })} />);
-    expect(screen.getByText('1 present · 1 late · 1 absent')).toBeTruthy();
+    expect(screen.getByText('Attended')).toBeTruthy();
+    expect(screen.getAllByText('Absent')).toHaveLength(2); // the figure and Grace's status
+  });
+
+  it('shows four cards and a table with one line per student on a wide screen', async () => {
+    mockWide = true;
+    mockAttendees = rows;
+    await render(<TeachingSessionPanel session={session()} />);
+    expect(screen.getByText('Session attendance')).toBeTruthy();
+    expect(screen.getByText('2 of 3 checked in')).toBeTruthy();
+    expect(screen.getByText('Present on time')).toBeTruthy();
+    expect(screen.getByText('Present late')).toBeTruthy();
+    expect(screen.getByText('Not checked in yet')).toBeTruthy();
+    expect(screen.getByText('Session attendees')).toBeTruthy();
+    expect(screen.getByText('Checked in at')).toBeTruthy();
+    expect(screen.getByText('Method')).toBeTruthy();
+    expect(screen.getAllByText('View')).toHaveLength(3);
+    expect(screen.getByText('QR')).toBeTruthy();
+    expect(screen.getByText('Not checked in')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('link', { name: 'Ada Lovelace S1, Present' }));
+    expect(mockPush).toHaveBeenCalledWith(expect.stringMatching(/^\/attendance\/\d+\/S1$/));
+  });
+
+  it('calls the last card Absent once the session is over', async () => {
+    mockWide = true;
+    mockAttendees = rows;
+    await render(<TeachingSessionPanel session={session({ status: 'finished', now_local: '2026-11-03T13:00:00' })} />);
+    expect(screen.queryByText('Not checked in yet')).toBeNull();
+    expect(screen.getAllByText('Absent')).toHaveLength(2); // the card and Grace's status
   });
 
   it('says when check in opens, with no figures yet, before the session', async () => {
@@ -222,6 +255,16 @@ describe('Session panel counts', () => {
     await render(<TeachingSessionPanel session={session({ status: 'scheduled', now_local: '2026-11-03T09:00:00' })} />);
     expect(screen.getByText('Check in opens at 09:50')).toBeTruthy();
     expect(screen.getByText('0 of 3 checked in')).toBeTruthy();
+    expect(screen.getByText('Enrolled students')).toBeTruthy();
+    expect(screen.getAllByText('Not open yet')).toHaveLength(3);
+  });
+
+  it('keeps only student, ID and status in the table before the session', async () => {
+    mockWide = true;
+    mockAttendees = rows.map((row) => ({ ...row, status: null }));
+    await render(<TeachingSessionPanel session={session({ status: 'scheduled', now_local: '2026-11-03T09:00:00' })} />);
+    expect(screen.queryByText('Present on time')).toBeNull();
+    expect(screen.queryByText('Checked in at')).toBeNull();
     expect(screen.getAllByText('Not open yet')).toHaveLength(3);
   });
 });
