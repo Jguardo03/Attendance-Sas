@@ -228,16 +228,18 @@ describe('Session panel counts', () => {
     mockAttendees = rows;
     await render(<TeachingSessionPanel session={session()} />);
     expect(screen.getByText('Session attendance')).toBeTruthy();
-    expect(screen.getByText('2 of 3 checked in')).toBeTruthy();
-    expect(screen.getByText('Present on time')).toBeTruthy();
-    expect(screen.getByText('Present late')).toBeTruthy();
-    expect(screen.getByText('Not checked in yet')).toBeTruthy();
+    expect(screen.getByText('67%')).toBeTruthy();
+    expect(screen.getByText('2 of 3')).toBeTruthy();
+    expect(screen.getByText('students checked in')).toBeTruthy();
+    expect(screen.getByText('on time')).toBeTruthy();
+    expect(screen.getByText('checked in late')).toBeTruthy();
+    expect(screen.getByText('absent at session end')).toBeTruthy();
     expect(screen.getByText('Session attendees')).toBeTruthy();
     expect(screen.getByText('Checked in at')).toBeTruthy();
     expect(screen.getByText('Method')).toBeTruthy();
     expect(screen.getAllByText('View')).toHaveLength(3);
     expect(screen.getByText('QR')).toBeTruthy();
-    expect(screen.getByText('Not checked in')).toBeTruthy();
+    expect(screen.getAllByText('Not checked in')).toHaveLength(2); // the card and Grace's status
     await fireEvent.press(screen.getByRole('link', { name: 'Ada Lovelace S1, Present' }));
     expect(mockPush).toHaveBeenCalledWith(expect.stringMatching(/^\/attendance\/\d+\/S1$/));
   });
@@ -246,7 +248,8 @@ describe('Session panel counts', () => {
     mockWide = true;
     mockAttendees = rows;
     await render(<TeachingSessionPanel session={session({ status: 'finished', now_local: '2026-11-03T13:00:00' })} />);
-    expect(screen.queryByText('Not checked in yet')).toBeNull();
+    expect(screen.queryByText('absent at session end')).toBeNull();
+    expect(screen.getByText('did not check in')).toBeTruthy();
     expect(screen.getAllByText('Absent')).toHaveLength(2); // the card and Grace's status
   });
 
@@ -263,7 +266,7 @@ describe('Session panel counts', () => {
     mockWide = true;
     mockAttendees = rows.map((row) => ({ ...row, status: null }));
     await render(<TeachingSessionPanel session={session({ status: 'scheduled', now_local: '2026-11-03T09:00:00' })} />);
-    expect(screen.queryByText('Present on time')).toBeNull();
+    expect(screen.queryByText('on time')).toBeNull();
     expect(screen.queryByText('Checked in at')).toBeNull();
     expect(screen.getAllByText('Not open yet')).toHaveLength(3);
   });

@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { Image, Pressable, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Icon, type IconName } from '@/components/icon';
@@ -14,6 +14,7 @@ import { useAuth } from '@/providers/auth';
 import { shadows, type ColorToken } from '@/theme/tokens';
 
 const banner = require('../../../assets/images/Artboard Banner.png');
+const circle = require('../../../assets/images/whiteBackgroudCircle.png');
 
 // The tile and icon of each count card, written out in full so the styling tool can see the class names.
 const tones: Record<'present' | 'late' | 'absent' | 'waiting', { icon: IconName; color: ColorToken; tint: string }> = {
@@ -23,20 +24,54 @@ const tones: Record<'present' | 'late' | 'absent' | 'waiting', { icon: IconName;
   waiting: { icon: 'clock', color: 'contentMuted', tint: 'bg-surface-muted' },
 };
 
-function StatCard({ tone, label, value, note }: { tone: keyof typeof tones; label: string; value: number; note: string }) {
-  const { icon, color, tint } = tones[tone];
-  return (
-    <View className="flex-1 justify-between gap-2 rounded-card bg-surface p-5" style={{ boxShadow: shadows.card }}>
-      <View className="flex-row items-center gap-3">
-        <View className={`h-10 w-10 items-center justify-center rounded-block ${tint}`}>
-          <Icon name={icon} size={20} color={color} />
-        </View>
-        <Text variant="card" className="flex-1">
+// One of the four count cards: a lead (the percentage in a white circle, or an icon tile) beside the label, the figure and
+// a note. All four share this layout; the first sits on the banner artwork.
+function CountCard({ lead, label, value, note, hero = false }: { lead: ReactNode; label: string; value: string; note: string; hero?: boolean }) {
+  const color = hero ? 'text-primary-content' : '';
+  const body = (
+    <View className="flex-row items-center gap-4">
+      {lead}
+      <View className="flex-1">
+        <Text variant="meta" className={color}>
           {label}
         </Text>
+        <Text className={`font-inter-bold text-title ${color}`}>{value}</Text>
+        <Text variant="meta" className={color}>
+          {note}
+        </Text>
       </View>
-      <Text className="font-inter-bold text-title">{value}</Text>
-      <Text variant="meta">{note}</Text>
+    </View>
+  );
+  if (hero) {
+    return (
+      <View className="flex-[1.2]">
+        <Card variant="hero" image={banner}>
+          {body}
+        </Card>
+      </View>
+    );
+  }
+  return (
+    <View className="flex-1 justify-center rounded-card bg-surface p-5" style={{ boxShadow: shadows.card }}>
+      {body}
+    </View>
+  );
+}
+
+function IconTile({ tone }: { tone: keyof typeof tones }) {
+  const { icon, color, tint } = tones[tone];
+  return (
+    <View className={`h-14 w-14 items-center justify-center rounded-block ${tint}`}>
+      <Icon name={icon} size={28} color={color} />
+    </View>
+  );
+}
+
+function PercentCircle({ percent }: { percent: number }) {
+  return (
+    <View className="h-16 w-16 items-center justify-center">
+      <Image source={circle} aria-hidden style={{ position: 'absolute', width: '100%', height: '100%' }} />
+      <Text className="font-inter-bold text-card text-primary">{`${percent}%`}</Text>
     </View>
   );
 }
@@ -77,7 +112,6 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
   const cancelled = session.status === 'cancelled';
   const before = session.now_local < session.check_in_opens_at;
   const missing = over ? count('Absent') : enrolled - attended;
-  const share = (n: number) => `${enrolled > 0 ? Math.round((100 * n) / enrolled) : 0}% of the class`;
 
   const needle = search.trim().toLowerCase();
   const visible = rows.filter(
@@ -101,18 +135,15 @@ export function TeachingSessionPanel({ session }: { session: Session }) {
     </Card>
   ) : wide ? (
     <View className="flex-row gap-4">
-      <View className="flex-[1.5]">
-        <Card variant="hero" image={banner}>
-          <Text variant="card" className="text-primary-content">
-            Session attendance
-          </Text>
-          <Text className="font-inter-bold text-[40px] leading-[48px] text-primary-content">{`${percent}%`}</Text>
-          <Text className="text-primary-content">{`${attended} of ${enrolled} ${over ? 'attended' : 'checked in'}`}</Text>
-        </Card>
-      </View>
-      <StatCard tone="present" label="Present on time" value={present} note={share(present)} />
-      <StatCard tone="late" label="Present late" value={late} note={share(late)} />
-      <StatCard tone={over ? 'absent' : 'waiting'} label={over ? 'Absent' : 'Not checked in yet'} value={missing} note={share(missing)} />
+      <CountCard hero lead={<PercentCircle percent={percent} />} label="Session attendance" value={`${attended} of ${enrolled}`} note={over ? 'students attended' : 'students checked in'} />
+      <CountCard lead={<IconTile tone="present" />} label="Present" value={String(present)} note="on time" />
+      <CountCard lead={<IconTile tone="late" />} label="Late" value={String(late)} note="checked in late" />
+      <CountCard
+        lead={<IconTile tone={over ? 'absent' : 'waiting'} />}
+        label={over ? 'Absent' : 'Not checked in'}
+        value={String(missing)}
+        note={over ? 'did not check in' : 'absent at session end'}
+      />
     </View>
   ) : (
     <Card variant="hero" image={banner}>
