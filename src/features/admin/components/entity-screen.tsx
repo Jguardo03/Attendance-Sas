@@ -14,7 +14,8 @@ export function EntityScreen({
   children,
 }: {
   title: (entity: EntityDef) => string;
-  backTo: (entity: EntityDef) => { label: string; href: Href };
+  /** Null for a screen with nowhere to go back to (the list, when the menu is beside it). */
+  backTo: (entity: EntityDef) => { label: string; href: Href } | null;
   children: (entity: EntityDef, id: string | undefined) => ReactNode;
 }) {
   const { entity: key, id } = useLocalSearchParams<{ entity: string; id?: string }>();
@@ -26,7 +27,7 @@ export function EntityScreen({
   const back = backTo(entity);
 
   return (
-    <Screen title={title(entity)} header={<ScreenHeader title={title(entity)} subtitle={back.label} onBack={() => router.navigate(back.href)} />}>
+    <Screen title={title(entity)} header={<ScreenHeader title={title(entity)} subtitle={back?.label} onBack={back ? () => router.navigate(back.href) : undefined} />}>
       {children(entity, id)}
     </Screen>
   );

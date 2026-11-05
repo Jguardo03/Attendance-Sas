@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Button, Card, EmptyState, Grid, Screen, Text } from '@/components/ui';
+import { Button, Card, EmptyState, Screen, Text } from '@/components/ui';
 import { formatDayLong, formatDayShort } from '@/features/sessions/format';
 import { useAppNow, useAttendanceCounts, useDayCounts, useSessions } from '@/features/sessions/queries';
 import { StepButton } from '@/features/sessions/week-calendar';
 import { filterSessions, type SessionFilterValues } from '@/features/sessions/teaching';
 import { addDays, startOfWeek, weekdayInitials } from '@/lib/dates';
 
+import { AdminSessionList } from './admin-session-list';
 import { SessionFilters } from './session-filters';
-import { TeachingSessionCard } from './teaching-session-card';
 
 // Admin Calendar: a week strip with the number of sessions on each day. Tap a day to list its sessions,
 // each once, with the same filters as Today.
@@ -95,11 +95,7 @@ export function AdminCalendar() {
           <EmptyState image="calendar" title="No sessions" message="Nothing is scheduled for this day." />
         </Card>
       ) : null}
-      <Grid>
-        {visible.map((session) => (
-          <TeachingSessionCard key={session.session_id} session={session} counts={attendance.data?.get(session.session_id)} showLecturer />
-        ))}
-      </Grid>
+      <AdminSessionList sessions={visible} counts={attendance.data} />
     </Screen>
   );
 }

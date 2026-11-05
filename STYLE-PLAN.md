@@ -457,6 +457,13 @@ Student and lecturer Home now follow the reference images: no separate header; o
 - **Attendees:** the title has no count; search and the status filter sit on the title's row and have no labels. Desktop is a table, one line per student: avatar and name, ID, status, checked in at, method, View (before the session only student, ID and status). On a phone each student is one tappable card (avatar, name, ID and time, status). The inline "View record" and "Check in manually" buttons are gone: the record has Check in manually.
 - **Attendance record:** from 1024 px three columns: the student and the record take two (History under them), the third has "Need to correct this?" and "Student in this class" (ring, N of M attended, View student's attendance). The phone layout is unchanged.
 
+### Admin Home, Calendar and Admin tab corrections (2026-11-06, after Phase 9)
+
+- **Home counts:** each of the five cards has an icon tile on the left and the figure and label on the right.
+- **Filters:** search, All lecturers, All locations and All statuses sit in one row (wrapping on a phone), with no titles; the "All ..." text is the placeholder. The Filters panel, the chips and Clear filters are gone, and so is the Class filter (the search covers it).
+- **Sessions (Home and Calendar):** one compact row per session. From 768 px a table with a header (time, class, lecturer, location, status, attendance bar and N/M); on a phone a small bordered card (class and status, time and lecturer, bar and N/M). A moved or cancelled session shows its note instead of the bar. The colour bar is the same for the same class.
+- **Admin tab (from 1024 px):** the records are a Manage menu beside the main navigation and the chosen one opens to its right; /admin opens the first record and the list has no back button there. The phone keeps the Admin list.
+
 ---
 
 ## Phase 9: Final verification

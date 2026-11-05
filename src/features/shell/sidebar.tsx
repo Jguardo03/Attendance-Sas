@@ -10,7 +10,7 @@ import { useAuth } from '@/providers/auth';
 import { isActive, navItems, type NavItem } from './nav';
 import { SignOutConfirm } from './sign-out-confirm';
 
-function Row({ icon, label, active = false, danger = false, onPress }: { icon: IconName; label: string; active?: boolean; danger?: boolean; onPress: () => void }) {
+export function Row({ icon, label, active = false, danger = false, onPress }: { icon: IconName; label: string; active?: boolean; danger?: boolean; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="link"

@@ -1,23 +1,36 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Card, EmptyState, Grid, Screen, Text, useColumns, Loading } from '@/components/ui';
+import { Icon, type IconName } from '@/components/icon';
+import { Card, EmptyState, Screen, Text, Loading } from '@/components/ui';
 import { formatDayLong } from '@/features/sessions/format';
 import { useAdminTodayCounts, useAppNow, useAttendanceCounts, useSessions } from '@/features/sessions/queries';
 import { activeFilterCount, filterSessions, type SessionFilterValues } from '@/features/sessions/teaching';
-import { shadows } from '@/theme/tokens';
+import { shadows, type ColorToken } from '@/theme/tokens';
 
+import { AdminSessionList } from './admin-session-list';
 import { SessionFilters } from './session-filters';
-import { TeachingSessionCard } from './teaching-session-card';
 
-// Written out in full so the styling tool can see the class names.
-const valueTone = { default: 'text-content', primary: 'text-primary', warning: 'text-warning-content' } as const;
+// The icon tile of each count, written out in full so the styling tool can see the class names.
+const tones = {
+  primary: { color: 'primary', tint: 'bg-primary-tint' },
+  muted: { color: 'contentMuted', tint: 'bg-surface-muted' },
+  success: { color: 'success', tint: 'bg-success-tint' },
+  warning: { color: 'warning', tint: 'bg-warning-tint' },
+} as const satisfies Record<string, { color: ColorToken; tint: string }>;
 
-function Stat({ value, label, tone = 'default' }: { value: number | undefined; label: string; tone?: keyof typeof valueTone }) {
+// One count: the icon in a tile on the left, the figure and its label on the right.
+function Stat({ value, label, icon, tone }: { value: number | undefined; label: string; icon: IconName; tone: keyof typeof tones }) {
+  const { color, tint } = tones[tone];
   return (
-    <View className="min-w-[28%] flex-1 gap-0.5 md:min-w-[17%] rounded-card bg-surface p-4" style={{ boxShadow: shadows.card }} accessibilityLabel={`${label}: ${value ?? 0}`}>
-      <Text className={`font-inter-bold text-title ${valueTone[tone]}`}>{value ?? '-'}</Text>
-      <Text variant="meta">{label}</Text>
+    <View className="min-w-[45%] flex-1 flex-row items-center gap-3 rounded-card bg-surface p-4 md:min-w-[17%]" style={{ boxShadow: shadows.card }} accessibilityLabel={`${label}: ${value ?? 0}`}>
+      <View className={`h-12 w-12 items-center justify-center rounded-block ${tint}`}>
+        <Icon name={icon} size={24} color={color} />
+      </View>
+      <View className="flex-1">
+        <Text className="font-inter-bold text-title">{value ?? '-'}</Text>
+        <Text variant="meta">{label}</Text>
+      </View>
     </View>
   );
 }
@@ -25,7 +38,6 @@ function Stat({ value, label, tone = 'default' }: { value: number | undefined; l
 // Admin Home ("Today", Admin UI pages 1 to 3): five counts and every session today, each listed once, with search and
 // filters.
 export function AdminToday() {
-  const columns = useColumns();
   const now = useAppNow();
   const today = now.data?.slice(0, 10) ?? '';
   const [filters, setFilters] = useState<SessionFilterValues>({});
@@ -49,11 +61,11 @@ export function AdminToday() {
   return (
     <Screen title={today ? `Today, ${formatDayLong(today)}` : 'Today'} header={header}>
       <View className="flex-row flex-wrap gap-3">
-        <Stat value={counts.data?.sessions_today} label="Sessions today" />
-        <Stat value={counts.data?.live_now} label="Live now" tone="primary" />
-        <Stat value={counts.data?.upcoming} label="Upcoming" />
-        <Stat value={counts.data?.finished} label="Finished" />
-        <Stat value={counts.data?.rescheduled_or_cancelled} label="Rescheduled or cancelled" tone="warning" />
+        <Stat icon="calendar" tone="primary" value={counts.data?.sessions_today} label="Sessions today" />
+        <Stat icon="eye" tone="primary" value={counts.data?.live_now} label="Live now" />
+        <Stat icon="clock" tone="muted" value={counts.data?.upcoming} label="Upcoming" />
+        <Stat icon="checkCircle" tone="success" value={counts.data?.finished} label="Finished" />
+        <Stat icon="warning" tone="warning" value={counts.data?.rescheduled_or_cancelled} label="Rescheduled or cancelled" />
       </View>
 
       <SessionFilters sessions={all} value={filters} onChange={setFilters} search={search} onSearch={setSearch} />
@@ -62,7 +74,6 @@ export function AdminToday() {
         <Text variant="section">{filtered ? `Sessions today (${visible.length} of ${all.length})` : `All sessions today (${all.length})`}</Text>
         <Text variant="meta">Each listed once</Text>
       </View>
-      <Text variant="meta">One row per session. Each session is listed once, even with many students enrolled.</Text>
       {sessions.isPending || now.isPending ? <Loading /> : null}
       {sessions.isError ? <Text variant="error">Could not load the sessions for today.</Text> : null}
       {sessions.data && visible.length === 0 ? (
@@ -74,11 +85,7 @@ export function AdminToday() {
           />
         </Card>
       ) : null}
-      <Grid columns={columns}>
-        {visible.map((session) => (
-          <TeachingSessionCard key={session.session_id} session={session} counts={attendance.data?.get(session.session_id)} showLecturer />
-        ))}
-      </Grid>
+      <AdminSessionList sessions={visible} counts={attendance.data} />
     </Screen>
   );
 }

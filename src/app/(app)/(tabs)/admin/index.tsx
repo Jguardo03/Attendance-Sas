@@ -1,32 +1,20 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 
 import { Card, ListRow, Screen, Text } from '@/components/ui';
-import type { IconName } from '@/components/icon';
-import { entities } from '@/features/admin/entities';
+import { adminIcons, useAdminEntities } from '@/features/admin/components/admin-menu';
 import { adminHref } from '@/features/admin/routes';
+import { useIsWide } from '@/features/shell/nav';
 import { useAuth } from '@/providers/auth';
 
-// One icon per kind of record; anything new falls back to the generic one.
-const icons: Record<string, IconName> = {
-  periods: 'calendar',
-  classes: 'classes',
-  schedules: 'clock',
-  locations: 'room',
-  beacons: 'bluetooth',
-  'nfc-tags': 'nfc',
-  frequencies: 'frequency',
-  'email-formats': 'mail',
-  permissions: 'permissions',
-  roles: 'roles',
-  users: 'users',
-};
-
-// The Admin hub (Admin UI page 15): a list of the records to manage, with a link to the attendance reports.
+// The Admin hub (Admin UI page 2): a list of the records to manage, with a link to the attendance reports. On wide
+// screens the same list is the menu beside the navigation, so this opens the first record instead.
 export default function AdminHome() {
   const { can } = useAuth();
   const router = useRouter();
-  const shown = entities.filter((entity) => can(entity.permission));
+  const wide = useIsWide();
+  const shown = useAdminEntities();
   const reports = can('attendance.view_all');
+  if (wide && shown.length > 0) return <Redirect href={adminHref(shown[0].key)} />;
 
   return (
     <Screen title="Admin">
@@ -35,7 +23,7 @@ export default function AdminHome() {
         {shown.map((entity, index) => (
           <ListRow
             key={entity.key}
-            icon={icons[entity.key] ?? 'admin'}
+            icon={adminIcons[entity.key] ?? 'admin'}
             title={entity.label}
             onPress={() => router.push(adminHref(entity.key))}
             last={index === shown.length - 1 && !reports}

@@ -33,7 +33,7 @@ describe('CrudError', () => {
   });
 });
 
-describe('admin session search and filter chips', () => {
+describe('admin session search and filters', () => {
   const list = [session(1, 'Database Systems'), session(2, 'Web Development', 'finished')];
 
   it('searches the class name, case-insensitively, together with the filters', () => {
@@ -42,11 +42,15 @@ describe('admin session search and filter chips', () => {
     expect(filterSessions(list, {}, '  ')).toHaveLength(2);
   });
 
-  it('shows each filter that is on as a chip that removes just that filter', async () => {
+  it('lays the filters out in one row with "All ..." placeholders and no titles', async () => {
     const onChange = jest.fn();
-    await render(<SessionFilters sessions={list} value={{ lecturer: 'Omar Park', status: 'Live' }} onChange={onChange} search="" onSearch={jest.fn()} />);
-    expect(screen.getByText('Lecturer: Omar Park')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Remove Lecturer filter' }));
-    expect(onChange).toHaveBeenCalledWith({ lecturer: undefined, status: 'Live' });
+    await render(<SessionFilters sessions={list} value={{}} onChange={onChange} search="" onSearch={jest.fn()} />);
+    expect(screen.getByText('All lecturers')).toBeTruthy();
+    expect(screen.getByText('All locations')).toBeTruthy();
+    expect(screen.getByText('All statuses')).toBeTruthy();
+    expect(screen.queryByText('Filters')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Lecturer' }));
+    await fireEvent.press(screen.getByText('Omar Park'));
+    expect(onChange).toHaveBeenCalledWith({ lecturer: 'Omar Park' });
   });
 });
