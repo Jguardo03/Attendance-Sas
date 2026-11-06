@@ -26,7 +26,7 @@
       "bundler": "metro"
     },
     "plugins": [
-      ["expo-camera", { "cameraPermission": "Allow Attendancely to use the camera to read the QR code shown in the room." }],
+      ["expo-camera", { "cameraPermission": "Allow Attendancely to use the camera to read the QR code shown in the room.", "recordAudioAndroid": false }],
       "expo-router",
       [
         "expo-splash-screen",
@@ -37,6 +37,12 @@
         }
       ]
     ],
+    "owner": "jguardo",
+    "extra": {
+      "eas": {
+        "projectId": "da1489c9-45c7-4114-be67-d7a838ad315a"
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
